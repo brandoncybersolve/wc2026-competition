@@ -1101,13 +1101,51 @@ function MyTeams({ user, participants }) {
 }
 
 // ─── PREDICTIONS ─────────────────────────────────────────────────
-function Predictions({ user, matches, predictions, onSavePrediction, showToast }) {
-  const [sel, setSel] = useState({});
-  const [tab, setTab] = useState("open");
+// Week boundaries based on tournament start Jun 11 2026
+function getMatchWeek(match) {
+  if (!match.kickoff && !match.date) return 1;
+  const dateStr = match.kickoff || match.date;
+  const d = new Date(dateStr);
+  const start = new Date("2026-06-11T00:00:00+02:00");
+  const diff  = Math.floor((d - start) / (7 * 24 * 60 * 60 * 1000));
+  return Math.min(Math.max(diff + 1, 1), 5);
+}
 
-  const open = (matches || []).filter(m => m.status === "open" || m.status === "locked");
-  const done = (matches || []).filter(m => m.status === "completed");
-  const myPreds = predictions || {};
+function getWeekLabel(week) {
+  const labels = {
+    1: "Week 1 · Jun 11–17",
+    2: "Week 2 · Jun 18–24",
+    3: "Week 3 · Jun 25–27",
+    4: "Week 4 · R32",
+    5: "Week 5 · Knockouts",
+  };
+  return labels[week] || "Week " + week;
+}
+
+function Predictions({ user, matches, predictions, onSavePrediction, showToast }) {
+  const [sel,     setSel]     = useState({});
+  const [tab,     setTab]     = useState("predict");
+  const [weekTab, setWeekTab] = useState(getCurrentWeek());
+
+  const myPreds   = predictions || {};
+  const allOpen   = (matches || []).filter(m => m.status === "open" || m.status === "locked");
+  const allDone   = (matches || []).filter(m => m.status === "completed");
+
+  // Group open matches by week
+  const matchesByWeek = {};
+  allOpen.forEach(m => {
+    const w = getMatchWeek(m);
+    if (!matchesByWeek[w]) matchesByWeek[w] = [];
+    matchesByWeek[w].push(m);
+  });
+  const availableWeeks = Object.keys(matchesByWeek).map(Number).sort();
+
+  // Current week's matches
+  const weekMatches = matchesByWeek[weekTab] || [];
+
+  // Stats
+  const correctCount = allDone.filter(m => myPreds[m.id] && myPreds[m.id].pts > 0).length;
+  const predictedCount = allDone.filter(m => myPreds[m.id]).length;
 
   const save = async () => {
     const keys = Object.keys(sel).filter(k => sel[k]);
@@ -1118,95 +1156,125 @@ function Predictions({ user, matches, predictions, onSavePrediction, showToast }
     showToast({ title: "Predictions locked! 🎯", body: keys.length + " prediction" + (keys.length !== 1 ? "s" : "") + " saved" });
   };
 
+  const renderMatchCard = (m) => {
+    const h      = getTeam(m.home);
+    const a      = getTeam(m.away);
+    const locked = m.status === "locked";
+    const myPick = sel[m.id] || (myPreds[m.id] && myPreds[m.id].outcome);
+    const saved  = !sel[m.id] && myPreds[m.id];
+    const ko     = m.kickoff ? new Date(m.kickoff) : null;
+    const time   = ko
+      ? ko.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Johannesburg" }) + " SAST"
+      : m.date;
+    return (
+      <div key={m.id} className="pred-card" style={{ opacity: locked ? 0.75 : 1 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <span className="badge bp" style={{ fontSize: 11 }}>{m.stage}</span>
+            <span className="badge bm" style={{ fontSize: 11 }}>🕐 {time}</span>
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {saved  && <span className="badge bg-g" style={{ fontSize: 11 }}>✓ Saved</span>}
+            {locked && <span className="badge bg-r" style={{ fontSize: 11 }}>🔒 Locked</span>}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <Flag code={h.id} size={32} style={{ margin: "0 auto 6px", display: "block" }} />
+            <div style={{ fontSize: 13, fontWeight: 800 }}>{h.name}</div>
+          </div>
+          <div style={{ fontFamily: "var(--fd)", fontSize: 18, color: "var(--muted)" }}>VS</div>
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <Flag code={a.id} size={32} style={{ margin: "0 auto 6px", display: "block" }} />
+            <div style={{ fontSize: 13, fontWeight: 800 }}>{a.name}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[{ k: "home", l: h.name + " Win", cls: "ph" }, { k: "draw", l: "Draw", cls: "pd" }, { k: "away", l: a.name + " Win", cls: "pa" }].map(o => (
+            <button key={o.k}
+              className={"pred-btn " + (myPick === o.k ? o.cls : "") + (locked ? " lok" : "")}
+              onClick={() => !locked && setSel(prev => ({ ...prev, [m.id]: o.k }))}>
+              {o.l}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fade-in">
       <div className="phead">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
-          <div><div className="ptitle">PREDICTIONS</div><div className="psub">Predict match outcomes · 20 pts for correct pick</div></div>
+          <div>
+            <div className="ptitle">PREDICTIONS</div>
+            <div className="psub">Predict match outcomes · 20 pts for correct pick</div>
+          </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "var(--fd)", fontSize: 26, color: "var(--teal)" }}>
-              {done.filter(m => myPreds[m.id] && myPreds[m.id].pts > 0).length} / {done.filter(m => myPreds[m.id]).length}
-            </div>
+            <div style={{ fontFamily: "var(--fd)", fontSize: 26, color: "var(--teal)" }}>{correctCount} / {predictedCount}</div>
             <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>correct predictions</div>
           </div>
         </div>
       </div>
+
+      {/* Main tabs */}
       <div className="tabs">
-        <div className={"tab " + (tab === "open" ? "on" : "")}    onClick={() => setTab("open")}>🔓 Open ({open.length})</div>
-        <div className={"tab " + (tab === "history" ? "on" : "")} onClick={() => setTab("history")}>📜 History ({done.length})</div>
+        <div className={"tab " + (tab === "predict" ? "on" : "")} onClick={() => setTab("predict")}>🎯 Predict ({allOpen.length})</div>
+        <div className={"tab " + (tab === "history" ? "on" : "")} onClick={() => setTab("history")}>📜 Results ({allDone.length})</div>
       </div>
 
-      {tab === "open" && (
+      {/* PREDICT TAB */}
+      {tab === "predict" && (
         <div>
           <div style={{ padding: "11px 16px", background: "rgba(0,191,165,.07)", borderRadius: 12, border: "1.5px solid rgba(0,191,165,.2)", fontSize: 13, color: "var(--teal)", fontWeight: 700, marginBottom: 16 }}>
-            💡 Correct pick = <strong>20 pts</strong>. Predictions lock at kick-off automatically.
+            💡 Correct pick = <strong>20 pts</strong>. Predictions lock automatically at kick-off.
           </div>
-          {open.length === 0 && (
-            <div className="card" style={{ textAlign: "center", padding: 40 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🕐</div>
-              <div style={{ fontWeight: 800, color: "var(--navy)" }}>No matches open yet</div>
-              <div style={{ color: "var(--muted)", marginTop: 8 }}>Check back when the tournament starts on June 11</div>
+
+          {/* Week tabs */}
+          {availableWeeks.length > 0 && (
+            <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto", paddingBottom: 4 }}>
+              {availableWeeks.map(w => (
+                <button key={w}
+                  onClick={() => setWeekTab(w)}
+                  style={{ padding: "10px 18px", borderRadius: 12, border: "2px solid " + (weekTab === w ? "var(--coral)" : "var(--border)"), background: weekTab === w ? "var(--coral)" : "var(--card)", color: weekTab === w ? "#fff" : "var(--muted)", fontWeight: 800, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", transition: "all .15s", flexShrink: 0 }}>
+                  {getWeekLabel(w)}
+                  <span style={{ marginLeft: 8, background: weekTab === w ? "rgba(255,255,255,.25)" : "var(--border)", borderRadius: 20, padding: "2px 8px", fontSize: 11 }}>
+                    {(matchesByWeek[w]||[]).length}
+                  </span>
+                </button>
+              ))}
             </div>
           )}
-          {open.map(m => {
-            const h      = getTeam(m.home);
-            const a      = getTeam(m.away);
-            const locked = m.status === "locked";
-            const myPick = sel[m.id] || (myPreds[m.id] && myPreds[m.id].outcome);
-            const saved  = !sel[m.id] && myPreds[m.id];
-            const ko     = m.kickoff ? new Date(m.kickoff) : null;
-            const time   = ko ? ko.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Johannesburg" }) + " SAST" : m.date;
-            return (
-              <div key={m.id} className="pred-card" style={{ opacity: locked ? 0.75 : 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 6 }}>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <span className="badge bp" style={{ fontSize: 11 }}>{m.stage}</span>
-                    <span className="badge bm" style={{ fontSize: 11 }}>🕐 {time}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {saved  && <span className="badge bg-g" style={{ fontSize: 11 }}>✓ Saved</span>}
-                    {locked && <span className="badge bg-r" style={{ fontSize: 11 }}>🔒 Locked</span>}
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                  <div style={{ flex: 1, textAlign: "center" }}>
-                    <Flag code={h.id} size={32} style={{ margin: "0 auto 6px", display: "block" }} />
-                    <div style={{ fontSize: 13, fontWeight: 800 }}>{h.name}</div>
-                  </div>
-                  <div style={{ fontFamily: "var(--fd)", fontSize: 18, color: "var(--muted)" }}>VS</div>
-                  <div style={{ flex: 1, textAlign: "center" }}>
-                    <Flag code={a.id} size={32} style={{ margin: "0 auto 6px", display: "block" }} />
-                    <div style={{ fontSize: 13, fontWeight: 800 }}>{a.name}</div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {[{ k: "home", l: h.name + " Win", cls: "ph" }, { k: "draw", l: "Draw", cls: "pd" }, { k: "away", l: a.name + " Win", cls: "pa" }].map(o => (
-                    <button key={o.k}
-                      className={"pred-btn " + (myPick === o.k ? o.cls : "") + (locked ? " lok" : "")}
-                      onClick={() => !locked && setSel(prev => ({ ...prev, [m.id]: o.k }))}>
-                      {o.l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+
+          {weekMatches.length === 0 && (
+            <div className="card" style={{ textAlign: "center", padding: 40 }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🕐</div>
+              <div style={{ fontWeight: 800, color: "var(--navy)" }}>No matches this week</div>
+              <div style={{ color: "var(--muted)", marginTop: 8 }}>Check another week or come back later</div>
+            </div>
+          )}
+
+          {weekMatches.map(m => renderMatchCard(m))}
+
           {Object.values(sel).some(Boolean) && (
-            <button className="btn btn-coral" style={{ marginTop: 8 }} onClick={save}>🎯 Lock In Predictions</button>
+            <button className="btn btn-coral" style={{ marginTop: 8 }} onClick={save}>
+              🎯 Lock In {Object.values(sel).filter(Boolean).length} Prediction{Object.values(sel).filter(Boolean).length !== 1 ? "s" : ""}
+            </button>
           )}
         </div>
       )}
 
+      {/* HISTORY TAB */}
       {tab === "history" && (
         <div>
-          {done.length === 0 && (
+          {allDone.length === 0 && (
             <div className="card" style={{ textAlign: "center", padding: 40 }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
               <div style={{ fontWeight: 800, color: "var(--navy)" }}>No results yet</div>
-              <div style={{ color: "var(--muted)", marginTop: 8 }}>Completed matches will appear here</div>
+              <div style={{ color: "var(--muted)", marginTop: 8 }}>Completed matches appear here</div>
             </div>
           )}
-          {done.map(m => {
+          {allDone.map(m => {
             const h       = getTeam(m.home);
             const a       = getTeam(m.away);
             const actual  = m.homeScore > m.awayScore ? "home" : m.awayScore > m.homeScore ? "away" : "draw";
@@ -1254,6 +1322,7 @@ function Predictions({ user, matches, predictions, onSavePrediction, showToast }
     </div>
   );
 }
+
 
 // ─── CHALLENGE ───────────────────────────────────────────────────
 function Challenge({ user, participants, showToast, onAddChallengePoints }) {
