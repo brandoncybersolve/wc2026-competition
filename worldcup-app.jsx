@@ -552,10 +552,57 @@ function Toast({ msg, onClose }) {
   );
 }
 
+// ─── NAME PICKER — shown every time app opens ────────────────────
+function NamePicker({ participants, onSelect }) {
+  const [selecting, setSelecting] = useState(null);
+  const getTotal = p => (p.teamPts||0) + (p.predPts||0) + (p.challengePts||0) + (p.bonusPts||0);
+  const hasTeams = name => (participants||[]).find(p => p.name === name)?.portfolio?.length > 0;
+
+  return (
+    <div className="ob-wrap">
+      <Blobs />
+      <div className="ob-inner" style={{ textAlign: "center", zIndex: 1, position: "relative", maxWidth: 560 }}>
+        <div className="float" style={{ fontSize: 72, marginBottom: 12 }}>⚽</div>
+        <div style={{ fontFamily: "var(--fd)", fontSize: 42, color: "var(--navy)", marginBottom: 8, lineHeight: 1 }}>WORLD CUP<br />CHALLENGE 2026</div>
+        <p style={{ color: "var(--muted)", fontWeight: 700, fontSize: 15, marginBottom: 36 }}>
+          Who are you?
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 16 }}>
+          {PEOPLE.map(name => {
+            const p      = (participants||[]).find(pp => pp.name === name) || { name, teamPts:0, predPts:0, challengePts:0, bonusPts:0 };
+            const total  = getTotal(p);
+            const done   = hasTeams(name);
+            const isSel  = selecting === name;
+            return (
+              <div key={name}
+                className={"ppick " + (isSel ? "sel" : "")}
+                onClick={async () => {
+                  setSelecting(name);
+                  await onSelect(name);
+                }}>
+                {isSel && <div className="chk">→</div>}
+                <Avatar name={name} size={64} />
+                <div style={{ fontWeight: 800, fontSize: 13, color: "var(--navy)", marginTop: 10 }}>{name}</div>
+                {done
+                  ? <div style={{ fontSize: 11, color: "var(--teal)", fontWeight: 800, marginTop: 4 }}>{total} pts</div>
+                  : <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, marginTop: 4 }}>Not joined</div>
+                }
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>
+          Click your avatar to enter
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── ONBOARDING ──────────────────────────────────────────────────
-function Onboarding({ onComplete, claimedTeams, eliteAssign }) {
-  const [step,     setStep]    = useState(0);
-  const [who,      setWho]     = useState(null);
+function Onboarding({ onComplete, claimedTeams, eliteAssign, whoOverride }) {
+  const [step,     setStep]    = useState(whoOverride ? 1 : 0);
+  const [who,      setWho]     = useState(whoOverride || null);
   const [chosen,   setChosen]  = useState({ cA: null, cB: null, dog: null });
   const [revealed, setRevealed]= useState(false);
 
@@ -1817,11 +1864,8 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
 
 // ─── APP ROOT ────────────────────────────────────────────────────
 export default function App() {
-  // Sync localStorage read on init for instant session restore
-  const savedUser = (() => { try { return localStorage.getItem("wc2026_user"); } catch(e) { return null; } })();
-
   const [page,         setPage]        = useState("dashboard");
-  const [currentUser,  setCurrentUser] = useState(savedUser);
+  const [currentUser,  setCurrentUser] = useState(null);
   const [loading,      setLoading]     = useState(true);
   const [toast,        setToast]       = useState(null);
   const [participants, setParticipants]= useState(PEOPLE.map(name => ({ name, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, portfolio: [] })));
@@ -1888,22 +1932,7 @@ export default function App() {
           })));
         }
 
-        // 5. Restore session
-        if (savedUser) {
-          const portCheck = await sbGet("portfolios", "user_id=eq." + savedUser.toLowerCase());
-          if (!portCheck || portCheck.length === 0) {
-            localStorage.removeItem("wc2026_user");
-            setCurrentUser(null);
-          } else {
-            // Load their predictions
-            const dbPred = await sbGet("predictions", "user_id=eq." + savedUser.toLowerCase());
-            if (dbPred && dbPred.length > 0) {
-              const predMap = {};
-              dbPred.forEach(p => { predMap[p.match_id] = { outcome: p.outcome, pts: p.points_earned || 0 }; });
-              setPredictions(predMap);
-            }
-          }
-        }
+        // Session restore handled by name picker
 
       } catch(e) {
         console.error("Boot error:", e);
@@ -1913,31 +1942,41 @@ export default function App() {
     boot();
   }, []);
 
-  // ── POLL FOR UPDATES EVERY 30 SECONDS ────────────────────────
+  // ── POLL FOR UPDATES EVERY 10 SECONDS ────────────────────────
   useEffect(() => {
-    if (!currentUser) return;
     const poll = async () => {
       try {
+        // Always poll participants and portfolios (needed for name picker too)
         const dbP = await sbGet("participants");
         if (dbP && dbP.length > 0) {
+          const dbPort = await sbGet("portfolios");
           setParticipants(prev => prev.map(p => {
-            const db = dbP.find(d => d && d.name === p.name);
-            return db ? { ...p, teamPts: db.team_pts || 0, predPts: db.pred_pts || 0, challengePts: db.challenge_pts || 0, bonusPts: db.bonus_pts || 0 } : p;
+            const db   = dbP.find(d => d && d.name === p.name);
+            const port = (dbPort||[]).filter(pt => pt && pt.user_id === p.name.toLowerCase()).map(pt => ({ team: pt.team_id, slot: pt.slot_type }));
+            return db ? { ...p, teamPts: db.team_pts||0, predPts: db.pred_pts||0, challengePts: db.challenge_pts||0, bonusPts: db.bonus_pts||0, portfolio: port.length > 0 ? port : p.portfolio } : p;
           }));
+          // Update claimed teams
+          if (dbPort && dbPort.length > 0) {
+            const contenders = dbPort.filter(p => p && p.slot_type === "contender").map(p => p.team_id);
+            const underdogs  = dbPort.filter(p => p && p.slot_type === "underdog").map(p => p.team_id);
+            setClaimedTeams({ contenders, underdogs });
+          }
         }
+        if (!currentUser) return;
         const dbM = await sbGet("matches", "order=kickoff.asc");
         if (dbM && dbM.length > 0) {
           setMatches(dbM.filter(m => m && m.id).map(m => ({
-            id: m.id, home: m.home_id || "tbd", away: m.away_id || "tbd",
-            stage: m.stage || "Group Stage", date: m.match_date || "",
-            kickoff: m.kickoff || null, status: m.status || "open",
+            id: m.id, home: m.home_id||"tbd", away: m.away_id||"tbd",
+            stage: m.stage||"Group Stage", date: m.match_date||"",
+            kickoff: m.kickoff||null, status: m.status||"open",
             homeScore: m.home_score != null ? m.home_score : null,
             awayScore: m.away_score != null ? m.away_score : null,
           })));
         }
       } catch(e) { console.warn("Poll error:", e); }
     };
-    const interval = setInterval(poll, 30000);
+    poll(); // run immediately
+    const interval = setInterval(poll, 10000); // every 10 seconds
     return () => clearInterval(interval);
   }, [currentUser]);
 
@@ -1986,7 +2025,7 @@ export default function App() {
       contenders: [...prev.contenders, ...portfolio.filter(pt => pt.slot === "contender").map(pt => pt.team)],
       underdogs:  [...prev.underdogs,  ...portfolio.filter(pt => pt.slot === "underdog").map(pt => pt.team)],
     }));
-    localStorage.setItem("wc2026_user", name);
+    // No localStorage needed - name picker handles login each time
     setCurrentUser(name);
     sendChat("🎉 *" + name + " has joined the competition!*\nTheir squad is locked in — let the games begin! ⚽");
   };
@@ -2135,13 +2174,44 @@ export default function App() {
   if (!currentUser) return (
     <React.Fragment>
       <style>{CSS}</style>
-      <Onboarding
-        onComplete={handleOnboardingComplete}
-        claimedTeams={claimedTeams}
-        eliteAssign={eliteAssign}
+      <NamePicker
+        participants={participants}
+        onSelect={async (name) => {
+          // Check if this person has already onboarded
+          const dbPort = await sbGet("portfolios", "user_id=eq." + name.toLowerCase());
+          if (dbPort && dbPort.length > 0) {
+            // Already onboarded — load their data and go to dashboard
+            const dbPred = await sbGet("predictions", "user_id=eq." + name.toLowerCase());
+            if (dbPred && dbPred.length > 0) {
+              const predMap = {};
+              dbPred.forEach(p => { predMap[p.match_id] = { outcome: p.outcome, pts: p.points_earned || 0 }; });
+              setPredictions(predMap);
+            }
+            setCurrentUser(name);
+          } else {
+            // Not onboarded yet — go through onboarding
+            setCurrentUser("__onboarding__" + name);
+          }
+        }}
       />
     </React.Fragment>
   );
+
+  // Onboarding flow for new users
+  if (currentUser && currentUser.startsWith("__onboarding__")) {
+    const realName = currentUser.replace("__onboarding__", "");
+    return (
+      <React.Fragment>
+        <style>{CSS}</style>
+        <Onboarding
+          whoOverride={realName}
+          onComplete={handleOnboardingComplete}
+          claimedTeams={claimedTeams}
+          eliteAssign={eliteAssign}
+        />
+      </React.Fragment>
+    );
+  }
 
   const renderPage = () => {
     switch (page) {
