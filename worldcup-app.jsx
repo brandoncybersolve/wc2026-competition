@@ -1356,6 +1356,18 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const [spDone,     setSpDone]     = useState(false);
   const lTimer = useRef(null);
 
+  // Lightning timer — must be here at top level (React hooks rule)
+  useEffect(() => {
+    if (phase !== "lightning" || lDone) return;
+    lTimer.current = setInterval(() => {
+      setLTime(t => {
+        if (t <= 1) { clearInterval(lTimer.current); setLDone(true); setPhase("lightning-result"); return 0; }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(lTimer.current);
+  }, [phase, lDone]);
+
   const compKey = id => "w" + week + "_" + id;
   const isDone  = id => !!completed[compKey(id)];
 
@@ -1499,17 +1511,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     </div>
   );
 
-  // Lightning phase
-  useEffect(() => {
-    if (phase !== "lightning" || lDone) return;
-    lTimer.current = setInterval(() => {
-      setLTime(t => {
-        if (t <= 1) { clearInterval(lTimer.current); setLDone(true); setPhase("lightning-result"); return 0; }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(lTimer.current);
-  }, [phase]);
+
 
   const answerL = (ans) => {
     if (lAns !== null) return;
