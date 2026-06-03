@@ -115,6 +115,9 @@ const FLAGS = {
   col: { t:"h", c:["#FCD116","#003087","#CE1126"] },
   pan: { t:"h", c:["#FFFFFF","#DA121A","#003893"] },
   tbd: { t:"solid", c:"#9E9E9E" },
+  swe: { t:"sp", bg:"#006AA7", cross:"#FECC02" },
+  irq: { t:"h", c:["#CE1126","#FFFFFF","#000000"] },
+  drc: { t:"h", c:["#007FFF","#F7D618","#CE1126"] },
 };
 
 function Flag({ code, size = 32, style: sx = {} }) {
@@ -253,7 +256,9 @@ const TEAMS = [
   { id:"nor", name:"Norway",       rank:45 }, { id:"aut", name:"Austria",      rank:46 },
   { id:"alg", name:"Algeria",      rank:47 }, { id:"jor", name:"Jordan",       rank:48 },
   { id:"uzb", name:"Uzbekistan",   rank:49 }, { id:"col", name:"Colombia",     rank:50 },
-  { id:"pan", name:"Panama",       rank:51 }, { id:"tbd", name:"TBD",          rank:99 },
+  { id:"pan", name:"Panama",       rank:51 }, { id:"swe", name:"Sweden",        rank:52 },
+  { id:"irq", name:"Iraq",          rank:53 }, { id:"drc", name:"DR Congo",      rank:54 },
+  { id:"tbd", name:"TBD",           rank:99 },
 ];
 const getTeam = id => TEAMS.find(t => t.id === id) || { id: id || "tbd", name: (id || "TBD").toUpperCase(), rank: 99 };
 const CONTENDERS = TEAMS.filter(t => !ELITE_IDS.includes(t.id) && t.rank >= 6 && t.rank <= 15);
