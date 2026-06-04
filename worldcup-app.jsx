@@ -56,140 +56,59 @@ async function sendChat(text) {
   } catch(e) { console.warn("Chat error:", e); }
 }
 
-// ─── CSS FLAGS ───────────────────────────────────────────────────
-// Every team ID has an entry. "h"=horizontal stripes, "v"=vertical, "sp"=special
-const FLAGS = {
-  // Elite 5
-  spa: { t:"h", c:["#AA151B","#F1BF00","#AA151B"], w:true },
-  fra: { t:"v", c:["#002395","#FFFFFF","#ED2939"] },
-  eng: { t:"sp", bg:"#FFFFFF", cross:"#CF142B" },
-  bra: { t:"sp", bg:"#009C3B", diamond:"#FFD700" },
-  arg: { t:"h", c:["#74ACDF","#FFFFFF","#74ACDF"] },
-  // Contenders
-  por: { t:"v", c:["#006600","#FF0000","#FF0000"] },
-  ger: { t:"h", c:["#000000","#DD0000","#FFCE00"] },
-  ned: { t:"h", c:["#AE1C28","#FFFFFF","#21468B"] },
-  bel: { t:"v", c:["#1E1E1E","#FAE042","#F31830"] },
-  uru: { t:"h", c:["#5EB6E4","#FFFFFF","#5EB6E4"] },
-  usa: { t:"h", c:["#B22234","#FFFFFF","#B22234","#FFFFFF","#B22234"] },
-  mex: { t:"v", c:["#006847","#FFFFFF","#CE1126"] },
-  jpn: { t:"sp", bg:"#FFFFFF", circle:"#BC002D" },
-  mor: { t:"sp", bg:"#C1272D", star:"#006233" },
-  cro: { t:"h", c:["#FF0000","#FFFFFF","#003DA5"] },
-  // Underdogs
-  den: { t:"sp", bg:"#C60C30", cross:"#FFFFFF" },
-  swi: { t:"sp", bg:"#FF0000", cross:"#FFFFFF", sq:true },
-  sen: { t:"v", c:["#00853F","#FDEF42","#E31B23"] },
-  aus: { t:"sp", bg:"#012169", solid:true },
-  pol: { t:"h", c:["#FFFFFF","#DC143C"] },
-  cam: { t:"v", c:["#007A5E","#CE1126","#FCD116"] },
-  ksa: { t:"sp", bg:"#006C35", solid:true },
-  kor: { t:"sp", bg:"#FFFFFF", circle:"#CD2E3A" },
-  gha: { t:"h", c:["#006B3F","#FCD116","#EF3340"] },
-  ser: { t:"h", c:["#C6363C","#0C4076","#FFFFFF"] },
-  wal: { t:"h", c:["#FFFFFF","#FFFFFF","#00AB39"] },
-  cos: { t:"h", c:["#002B7F","#FFFFFF","#CF142B","#FFFFFF","#002B7F"] },
-  tun: { t:"sp", bg:"#E70013", circle:"#FFFFFF" },
-  ecu: { t:"h", c:["#FFD100","#034EA2","#EF3340"] },
-  qat: { t:"v", c:["#8D1B3D","#FFFFFF"] },
-  can: { t:"v", c:["#FF0000","#FFFFFF","#FF0000"] },
-  ira: { t:"h", c:["#239F40","#FFFFFF","#DA0000"] },
-  // Extra 2026 teams
-  rsa: { t:"h", c:["#007A4D","#FFB612","#007A4D"] },
-  cze: { t:"h", c:["#FFFFFF","#D7141A","#D7141A"] },
-  bih: { t:"sp", bg:"#003DA5", solid:true },
-  par: { t:"h", c:["#D52B1E","#FFFFFF","#0038A8"] },
-  hai: { t:"h", c:["#00209F","#009E49"] },
-  sco: { t:"sp", bg:"#003594", cross:"#FFFFFF" },
-  tur: { t:"sp", bg:"#E30A17", circle:"#FFFFFF" },
-  cur: { t:"h", c:["#002B7F","#FFFFFF","#F9E814"] },
-  civ: { t:"v", c:["#F77F00","#FFFFFF","#009A44"] },
-  cpv: { t:"h", c:["#003893","#FFFFFF","#CF2027"] },
-  egy: { t:"h", c:["#CE1126","#FFFFFF","#000000"] },
-  nzl: { t:"sp", bg:"#003DA5", solid:true },
-  nor: { t:"sp", bg:"#EF2B2D", cross:"#FFFFFF" },
-  aut: { t:"h", c:["#ED2939","#FFFFFF","#ED2939"] },
-  alg: { t:"h", c:["#006233","#FFFFFF","#006233"] },
-  jor: { t:"h", c:["#007A3D","#FFFFFF","#CE1126"] },
-  uzb: { t:"h", c:["#1EB53A","#FFFFFF","#CE1126"] },
-  col: { t:"h", c:["#FCD116","#003087","#CE1126"] },
-  pan: { t:"h", c:["#FFFFFF","#DA121A","#003893"] },
-  tbd: { t:"solid", c:"#9E9E9E" },
-  swe: { t:"sp", bg:"#006AA7", cross:"#FECC02" },
-  irq: { t:"h", c:["#CE1126","#FFFFFF","#000000"] },
-  drc: { t:"h", c:["#007FFF","#F7D618","#CE1126"] },
+// ─── FLAGS via flagcdn.com ────────────────────────────────────────
+// Free CDN — real flag images, works on all browsers including Windows
+const FLAG_CODES = {
+  spa:"es",   fra:"fr",   eng:"gb-eng", bra:"br",   arg:"ar",
+  por:"pt",   ger:"de",   ned:"nl",     bel:"be",   uru:"uy",
+  usa:"us",   mex:"mx",   jpn:"jp",     mor:"ma",   cro:"hr",
+  den:"dk",   swi:"ch",   sen:"sn",     aus:"au",   pol:"pl",
+  cam:"cm",   ksa:"sa",   kor:"kr",     gha:"gh",   ser:"rs",
+  wal:"gb-wls",cos:"cr",  tun:"tn",     ecu:"ec",   qat:"qa",
+  can:"ca",   ira:"ir",   rsa:"za",     cze:"cz",   bih:"ba",
+  par:"py",   hai:"ht",   sco:"gb-sct", tur:"tr",   cur:"cw",
+  civ:"ci",   cpv:"cv",   egy:"eg",     nzl:"nz",   nor:"no",
+  aut:"at",   alg:"dz",   jor:"jo",     uzb:"uz",   col:"co",
+  pan:"pa",   swe:"se",   irq:"iq",     drc:"cd",   tbd:"un",
 };
 
 function Flag({ code, size = 32, style: sx = {} }) {
-  const f = FLAGS[code];
+  const cdnCode = FLAG_CODES[code];
   const w = Math.round(size * 1.5);
   const h = size;
   const br = Math.max(2, Math.round(size * 0.1));
-  const base = {
+  const baseStyle = {
     display: "inline-block", verticalAlign: "middle",
     width: w, height: h, borderRadius: br,
     overflow: "hidden", flexShrink: 0,
     border: "1px solid rgba(0,0,0,0.15)",
-    position: "relative", ...sx,
+    objectFit: "cover", ...sx,
   };
-  if (!f) {
+  if (!cdnCode) {
     return (
-      <div style={{ ...base, background: "#9E9E9E", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: "#fff", fontSize: h * 0.38, fontWeight: 900, fontFamily: "sans-serif" }}>
+      <div style={{ ...baseStyle, background: "#9e9e9e", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ color: "#fff", fontSize: h * 0.36, fontWeight: 900, fontFamily: "sans-serif" }}>
           {(code || "?").toUpperCase().slice(0, 3)}
         </span>
       </div>
     );
   }
-  if (f.t === "solid") return <div style={{ ...base, background: f.c }} />;
-  if (f.t === "h") {
-    const n = f.c.length;
-    const strH = f.w ? null : Math.round(h / n);
-    const tops = f.w ? [0, Math.round(h * 0.25), Math.round(h * 0.75)] : f.c.map((_, i) => i * strH);
-    const heights = f.w ? [Math.round(h * 0.25), Math.round(h * 0.5), Math.round(h * 0.25)] : f.c.map((_, i) => i === n - 1 ? h - i * strH : strH);
-    return (
-      <div style={base}>
-        {f.c.map((col, i) => (
-          <div key={i} style={{ position: "absolute", left: 0, right: 0, top: tops[i], height: heights[i], background: col }} />
-        ))}
-      </div>
-    );
-  }
-  if (f.t === "v") {
-    const n = f.c.length;
-    const sw = Math.round(w / n);
-    return (
-      <div style={base}>
-        {f.c.map((col, i) => (
-          <div key={i} style={{ position: "absolute", top: 0, bottom: 0, left: i * sw, width: i === n - 1 ? w - i * sw : sw, background: col }} />
-        ))}
-      </div>
-    );
-  }
-  if (f.t === "sp") {
-    const ct = f.sq ? Math.round(w * 0.28) : Math.round(h * 0.24);
-    return (
-      <div style={{ ...base, background: f.bg }}>
-        {f.solid && null}
-        {f.diamond && (
-          <div style={{ position: "absolute", top: "12%", left: "7%", right: "7%", bottom: "12%", background: f.diamond, clipPath: "polygon(50% 4%,96% 50%,50% 96%,4% 50%)" }} />
-        )}
-        {f.cross && (
-          <React.Fragment>
-            <div style={{ position: "absolute", top: 0, bottom: 0, left: "50%", width: ct, transform: "translateX(-50%)", background: f.cross }} />
-            <div style={{ position: "absolute", left: 0, right: 0, top: "50%", height: ct, transform: "translateY(-50%)", background: f.cross }} />
-          </React.Fragment>
-        )}
-        {f.circle && (
-          <div style={{ position: "absolute", top: "50%", left: "50%", width: Math.round(h * 0.52), height: Math.round(h * 0.52), borderRadius: "50%", background: f.circle, transform: "translate(-50%,-50%)" }} />
-        )}
-        {f.star && (
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: Math.round(h * 0.5), lineHeight: 1, color: f.star, fontFamily: "serif" }}>★</div>
-        )}
-      </div>
-    );
-  }
-  return <div style={{ ...base, background: "#ccc" }} />;
+  // flagcdn.com proper embed with srcset for retina/hi-dpi screens
+  const base = "https://flagcdn.com";
+  const s1 = size <= 24 ? "16x12" : size <= 40 ? "32x24" : size <= 64 ? "48x36" : "80x60";
+  const s2 = size <= 24 ? "32x24" : size <= 40 ? "64x48" : size <= 64 ? "96x72" : "160x120";
+  const s3 = size <= 24 ? "48x36" : size <= 40 ? "96x72" : size <= 64 ? "144x108" : "240x180";
+  return (
+    <img
+      src={base + "/" + s1 + "/" + cdnCode + ".png"}
+      srcSet={base + "/" + s2 + "/" + cdnCode + ".png 2x, " + base + "/" + s3 + "/" + cdnCode + ".png 3x"}
+      width={w}
+      height={h}
+      alt={code}
+      style={baseStyle}
+      onError={e => { e.target.style.background="#9e9e9e"; e.target.style.display="none"; }}
+    />
+  );
 }
 
 // ─── AVATAR ──────────────────────────────────────────────────────
