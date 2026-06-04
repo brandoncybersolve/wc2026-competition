@@ -93,20 +93,15 @@ function Flag({ code, size = 32, style: sx = {} }) {
       </div>
     );
   }
-  // flagcdn.com proper embed with srcset for retina/hi-dpi screens
-  const base = "https://flagcdn.com";
-  const s1 = size <= 24 ? "16x12" : size <= 40 ? "32x24" : size <= 64 ? "48x36" : "80x60";
-  const s2 = size <= 24 ? "32x24" : size <= 40 ? "64x48" : size <= 64 ? "96x72" : "160x120";
-  const s3 = size <= 24 ? "48x36" : size <= 40 ? "96x72" : size <= 64 ? "144x108" : "240x180";
   return (
     <img
-      src={base + "/" + s1 + "/" + cdnCode + ".png"}
-      srcSet={base + "/" + s2 + "/" + cdnCode + ".png 2x, " + base + "/" + s3 + "/" + cdnCode + ".png 3x"}
+      src={"https://flagcdn.com/w160/" + cdnCode + ".png"}
+      srcSet={"https://flagcdn.com/w320/" + cdnCode + ".png 2x"}
       width={w}
       height={h}
       alt={code}
       style={baseStyle}
-      onError={e => { e.target.style.background="#9e9e9e"; e.target.style.display="none"; }}
+      onError={e => { e.target.style.display="none"; }}
     />
   );
 }
