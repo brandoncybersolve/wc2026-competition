@@ -369,18 +369,33 @@ const WHEEL_SEGS = [
   { label: "×1.3", color: "#00BFA5" }, { label: "×1.0", color: "#FF6B35" },
 ];
 
+
+// ─── HOT OR NOT DATA ─────────────────────────────────────────────
+const HOT_OR_NOT = [
+  { s: "Messi is better than Ronaldo",                    hot: true  },
+  { s: "VAR has improved football",                       hot: false },
+  { s: "The World Cup is better than the Champions League", hot: true },
+  { s: "Penalty shootouts are a fair way to decide games", hot: false },
+  { s: "Goalkeepers are the most important position",     hot: false },
+  { s: "Brazil will win the 2026 World Cup",             hot: true  },
+  { s: "Football is the greatest sport on earth",        hot: true  },
+  { s: "The offside rule should be abolished",           hot: false },
+  { s: "Argentina deserved to win the 2022 World Cup",   hot: true  },
+  { s: "African teams are underrated at World Cups",     hot: true  },
+];
+
 const WEEK_SCHEDULE = {
-  1: ["trivia", "flags", "spin"],
+  1: ["trivia", "flags", "hot"],
   2: ["trivia", "lightning", "score"],
   3: ["trivia", "flags", "lightning"],
-  4: ["trivia", "score", "spin"],
+  4: ["trivia", "hot", "score"],
   5: ["trivia", "lightning", "score"],
 };
 
 const CHALLENGE_INFO = {
   trivia:    { icon: "🧠", title: "Trivia Blitz",     desc: "5 questions · 20 pts · ~45 secs",  pts: 20 },
   flags:     { icon: "🌍", title: "Flag Frenzy",      desc: "5 flags · 15 pts · ~30 secs",      pts: 15 },
-  spin:      { icon: "🎡", title: "Lucky Spin",       desc: "Spin for a bonus multiplier!",     pts: 0  },
+  hot:       { icon: "🔥", title: "Hot or Not",       desc: "10 football takes · 20 pts · ~30 secs", pts: 20 },
   lightning: { icon: "⚡", title: "Lightning Round",  desc: "10 true/false · 20 pts · 30 secs", pts: 20 },
   score:     { icon: "🎯", title: "Score Predictor",  desc: "Predict exact score · 30 pts",     pts: 30 },
 };
@@ -559,6 +574,44 @@ function Toast({ msg, onClose }) {
         {msg.body && <div style={{ color: "rgba(255,255,255,.65)", fontSize: 13, marginTop: 2 }}>{msg.body}</div>}
       </div>
       <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,.5)", cursor: "pointer", fontSize: 20 }}>×</button>
+    </div>
+  );
+}
+
+// ─── HOW TO PLAY ─────────────────────────────────────────────────
+function HowToPlay({ onDone }) {
+  const rules = [
+    { icon: "⭐", title: "Your Top Team (3×)", desc: "Randomly assigned from the top 5 teams. Every time they win a round, you earn points × 3." },
+    { icon: "🥊", title: "2 Contenders (2×)", desc: "You pick 2 teams from ranks 6–15. First come first served — each team can only be picked once." },
+    { icon: "🐶", title: "1 Underdog (5×)", desc: "Pick any team ranked 16+. Highest multiplier — if they go on a run you could top the leaderboard!" },
+    { icon: "🎯", title: "Predictions", desc: "Predict Home Win / Draw / Away Win for each match. Correct = 20 pts. Predictions lock at kick-off." },
+    { icon: "🎮", title: "Weekly Challenges", desc: "3 challenges per week — Trivia, Flags, Hot or Not and more. Up to 55 pts per week. Once done, locked." },
+    { icon: "🏆", title: "Points & Stages", desc: "Group Stage = 10pts, R32 = 15pts, R16 = 25pts, QF = 40pts, SF = 60pts, Final = 120pts. All × your multiplier." },
+  ];
+  return (
+    <div className="ob-wrap">
+      <Blobs />
+      <div className="ob-inner" style={{ maxWidth: 600, zIndex: 1, position: "relative" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ fontSize: 56, marginBottom: 8 }}>🏆</div>
+          <div style={{ fontFamily: "var(--fd)", fontSize: 34, color: "var(--navy)", marginBottom: 6 }}>HOW TO PLAY</div>
+          <div style={{ color: "var(--muted)", fontWeight: 700, fontSize: 14 }}>World Cup Challenge 2026 — Quick Guide</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
+          {rules.map(r => (
+            <div key={r.title} style={{ display: "flex", gap: 16, alignItems: "flex-start", background: "var(--card)", borderRadius: 16, padding: "16px 18px", border: "2px solid var(--border)", boxShadow: "var(--sh)" }}>
+              <div style={{ fontSize: 28, flexShrink: 0, marginTop: 2 }}>{r.icon}</div>
+              <div>
+                <div style={{ fontWeight: 900, fontSize: 15, color: "var(--navy)", marginBottom: 4 }}>{r.title}</div>
+                <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, lineHeight: 1.5 }}>{r.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-coral" style={{ width: "100%", fontSize: 16, padding: "15px" }} onClick={onDone}>
+          Got it — Let&apos;s Play! ⚽
+        </button>
+      </div>
     </div>
   );
 }
@@ -1128,9 +1181,10 @@ function getWeekLabel(week) {
 }
 
 function Predictions({ user, matches, predictions, onSavePrediction, showToast }) {
-  const [sel,     setSel]     = useState({});
-  const [tab,     setTab]     = useState("predict");
-  const [weekTab, setWeekTab] = useState(getCurrentWeek());
+  const [sel,          setSel]         = useState({});
+  const [tab,          setTab]         = useState("predict");
+  const [weekTab,      setWeekTab]     = useState(getCurrentWeek());
+  const [expandedDays, setExpandedDays]= useState({});
 
   const myPreds   = predictions || {};
   const allOpen   = (matches || []).filter(m => m.status === "open" || m.status === "locked");
@@ -1164,9 +1218,10 @@ function Predictions({ user, matches, predictions, onSavePrediction, showToast }
   const renderMatchCard = (m) => {
     const h      = getTeam(m.home);
     const a      = getTeam(m.away);
-    const locked = m.status === "locked";
-    const myPick = sel[m.id] || (myPreds[m.id] && myPreds[m.id].outcome);
-    const saved  = !sel[m.id] && myPreds[m.id];
+    const alreadySaved = !!(myPreds[m.id] && myPreds[m.id].outcome);
+    const locked = m.status === "locked" || alreadySaved; // locked once saved OR at kickoff
+    const myPick = alreadySaved ? myPreds[m.id].outcome : sel[m.id];
+    const saved  = alreadySaved;
     const ko     = m.kickoff ? new Date(m.kickoff) : null;
     const time   = ko
       ? ko.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Johannesburg" }) + " SAST"
@@ -1259,7 +1314,50 @@ function Predictions({ user, matches, predictions, onSavePrediction, showToast }
             </div>
           )}
 
-          {weekMatches.map(m => renderMatchCard(m))}
+          {/* Group matches by day with accordion */}
+          {(() => {
+            const byDay = {};
+            weekMatches.forEach(m => {
+              const day = m.date || "Unknown";
+              if (!byDay[day]) byDay[day] = [];
+              byDay[day].push(m);
+            });
+            const days = Object.keys(byDay).sort((a, b) => {
+              const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+              const [am, ad] = a.replace("Jun ","Jun-").replace("Jul ","Jul-").split("-");
+              const [bm, bd] = b.replace("Jun ","Jun-").replace("Jul ","Jul-").split("-");
+              const aDate = new Date(2026, months.indexOf(am.trim()), parseInt(ad));
+              const bDate = new Date(2026, months.indexOf(bm.trim()), parseInt(bd));
+              return aDate - bDate;
+            });
+            return days.map(day => {
+              const dayMatches  = byDay[day];
+              const isOpen      = expandedDays[day] !== false; // open by default
+              const savedCount  = dayMatches.filter(m => myPreds[m.id]).length;
+              const pendingCount = dayMatches.filter(m => !myPreds[m.id] && m.status !== "locked").length;
+              return (
+                <div key={day} style={{ marginBottom: 12 }}>
+                  {/* Day header - clickable accordion */}
+                  <div onClick={() => setExpandedDays(prev => ({ ...prev, [day]: !isOpen }))}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "var(--card)", borderRadius: isOpen ? "16px 16px 0 0" : 16, border: "2px solid var(--border)", cursor: "pointer", userSelect: "none", borderBottom: isOpen ? "2px solid var(--border)" : "2px solid var(--border)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ fontFamily: "var(--fd)", fontSize: 18, color: "var(--navy)" }}>📅 {day}</div>
+                      <span className="badge bm" style={{ fontSize: 11 }}>{dayMatches.length} match{dayMatches.length !== 1 ? "es" : ""}</span>
+                      {savedCount > 0 && <span className="badge bg-g" style={{ fontSize: 11 }}>✓ {savedCount} saved</span>}
+                      {pendingCount > 0 && <span className="badge bc" style={{ fontSize: 11 }}>{pendingCount} open</span>}
+                    </div>
+                    <span style={{ color: "var(--muted)", fontSize: 18 }}>{isOpen ? "▲" : "▼"}</span>
+                  </div>
+                  {/* Day matches */}
+                  {isOpen && (
+                    <div style={{ border: "2px solid var(--border)", borderTop: "none", borderRadius: "0 0 16px 16px", padding: "12px", background: "rgba(245,246,250,.5)" }}>
+                      {dayMatches.map(m => renderMatchCard(m))}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
 
           {Object.values(sel).some(Boolean) && (
             <button className="btn btn-coral" style={{ marginTop: 8 }} onClick={save}>
@@ -1336,7 +1434,17 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const trivia      = TRIVIA_BANK[week]    || TRIVIA_BANK[1];
   const lightning   = LIGHTNING_BANK[week] || LIGHTNING_BANK[1];
 
-  const [completed,  setCompleted]  = useState({});
+  const [completed,  setCompleted]  = useState(() => {
+    // Load persisted completions from sessionStorage on mount
+    try {
+      const stored = sessionStorage.getItem("wc2026_completions");
+      if (stored) {
+        const all = JSON.parse(stored);
+        return all[user.toLowerCase()] || {};
+      }
+    } catch(e) {}
+    return {};
+  });
   const [phase,      setPhase]      = useState("menu");
   const [qIdx,       setQIdx]       = useState(0);
   const [score,      setScore]      = useState(0);
@@ -1349,9 +1457,10 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const [lAns,       setLAns]       = useState(null);
   const [lTime,      setLTime]      = useState(30);
   const [lDone,      setLDone]      = useState(false);
-  const [spinning,   setSpinning]   = useState(false);
-  const [spinDeg,    setSpinDeg]    = useState(0);
-  const [spinResult, setSpinResult] = useState(null);
+  // Hot or Not state
+  const [hotIdx,   setHotIdx]   = useState(0);
+  const [hotScore, setHotScore] = useState(0);
+  const [hotAns,   setHotAns]   = useState(null);
   const [spPick,     setSpPick]     = useState({ matchId: "m1", home: "", away: "" });
   const [spDone,     setSpDone]     = useState(false);
   const lTimer = useRef(null);
@@ -1374,6 +1483,21 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const claim = async (id, pts, label) => {
     setCompleted(prev => ({ ...prev, [compKey(id)]: pts }));
     if (pts > 0) await onAddChallengePoints(pts);
+    // Save completion to Supabase so it persists across reloads
+    await sbUpsert("challenge_completions", {
+      user_id:      user.toLowerCase(),
+      week:         week,
+      challenge_id: id,
+      pts_earned:   pts,
+    });
+    // Update sessionStorage so state persists on next load
+    try {
+      const stored = sessionStorage.getItem("wc2026_completions") || "{}";
+      const all    = JSON.parse(stored);
+      if (!all[user.toLowerCase()]) all[user.toLowerCase()] = {};
+      all[user.toLowerCase()]["w" + week + "_" + id] = pts;
+      sessionStorage.setItem("wc2026_completions", JSON.stringify(all));
+    } catch(e) {}
     showToast({ title: "+" + pts + " pts! " + label, body: "Added to your challenge score" });
     const me = (participants || []).find(p => p.name === user);
     if (me) {
@@ -1388,9 +1512,23 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     setQIdx(0); setScore(0); setAnswered(null);
     setFIdx(0); setFAns(null); setFScore(0);
     setLIdx(0); setLScore(0); setLAns(null); setLTime(30); setLDone(false);
-    setSpinResult(null);
+    setHotIdx(0); setHotScore(0); setHotAns(null);
     setSpPick({ matchId: "m1", home: "", away: "" }); setSpDone(false);
     if (lTimer.current) clearInterval(lTimer.current);
+  };
+
+  const answerHot = (pick) => {
+    if (hotAns !== null) return;
+    setHotAns(pick);
+    if (pick === HOT_OR_NOT[hotIdx].hot) setHotScore(s => s + 2);
+    setTimeout(() => {
+      if (hotIdx + 1 < HOT_OR_NOT.length) {
+        setHotIdx(i => i + 1);
+        setHotAns(null);
+      } else {
+        setPhase("hot-result");
+      }
+    }, 1000);
   };
 
   const Back = () => <button className="btn btn-outline btn-sm" onClick={reset}>← Back</button>;
@@ -1570,57 +1708,66 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     </div>
   );
 
-  // Spin phase
-  if (phase === "spin") {
-    const n = WHEEL_SEGS.length, ang = 360 / n;
+  // Hot or Not phase
+  if (phase === "hot") {
+    const item     = HOT_OR_NOT[hotIdx];
+    const progress = (hotIdx / HOT_OR_NOT.length) * 100;
     return (
-      <div className="fade-in" style={{ maxWidth: 420, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
-          <Back /><div style={{ fontFamily: "var(--fd)", fontSize: 20, color: "var(--navy)" }}>🎡 LUCKY SPIN</div>
+      <div className="fade-in" style={{ maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <Back />
+          <div style={{ fontFamily: "var(--fd)", fontSize: 18, color: "var(--navy)" }}>🔥 HOT OR NOT</div>
+          <span className="badge bc">{hotScore} pts</span>
         </div>
-        <div className="wheel-wrap">
-          <div style={{ fontSize: 30, marginBottom: -4, zIndex: 2 }}>⬇️</div>
-          <div className="wheel" style={{ transform: "rotate(" + spinDeg + "deg)" }}>
-            <svg viewBox="0 0 240 240" style={{ width: "100%", height: "100%", borderRadius: "50%" }}>
-              {WHEEL_SEGS.map((seg, i) => {
-                const s = i * ang, e = s + ang, r = 118, cx = 120, cy = 120;
-                const sx = cx + r * Math.cos((s - 90) * Math.PI / 180);
-                const sy = cy + r * Math.sin((s - 90) * Math.PI / 180);
-                const ex = cx + r * Math.cos((e - 90) * Math.PI / 180);
-                const ey = cy + r * Math.sin((e - 90) * Math.PI / 180);
-                const mx = cx + (r * .64) * Math.cos(((s + e) / 2 - 90) * Math.PI / 180);
-                const my = cy + (r * .64) * Math.sin(((s + e) / 2 - 90) * Math.PI / 180);
-                return (
-                  <g key={i}>
-                    <path d={"M" + cx + "," + cy + " L" + sx + "," + sy + " A" + r + "," + r + " 0 0,1 " + ex + "," + ey + " Z"} fill={seg.color} stroke="white" strokeWidth="2" />
-                    <text x={mx} y={my} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="12" fontWeight="bold" fontFamily="Righteous">{seg.label}</text>
-                  </g>
-                );
-              })}
-              <circle cx="120" cy="120" r="20" fill="white" stroke="var(--navy)" strokeWidth="3" />
-              <text x="120" y="120" textAnchor="middle" dominantBaseline="middle" fill="var(--navy)" fontSize="11" fontFamily="Righteous">⚽</text>
-            </svg>
+        {/* Progress bar */}
+        <div className="ptrack" style={{ marginBottom: 20, height: 8 }}>
+          <div className="pfill" style={{ width: progress + "%", background: "var(--coral)" }} />
+        </div>
+        <div style={{ textAlign: "center", fontSize: 12, color: "var(--muted)", fontWeight: 700, marginBottom: 16 }}>
+          {hotIdx + 1} of {HOT_OR_NOT.length}
+        </div>
+        {/* Statement card */}
+        <div style={{ background: "var(--card)", borderRadius: 24, border: "2px solid var(--border)", padding: "36px 28px", textAlign: "center", marginBottom: 24, boxShadow: "var(--sh-lg)", minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ fontWeight: 800, fontSize: 20, color: "var(--navy)", lineHeight: 1.4 }}>{item.s}</div>
+        </div>
+        {/* Hot / Not buttons */}
+        {hotAns === null ? (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <button onClick={() => answerHot(true)}
+              style={{ padding: "20px", borderRadius: 16, border: "none", background: "linear-gradient(135deg,#FF6B35,#FF8C5A)", color: "#fff", fontFamily: "var(--fd)", fontSize: 26, cursor: "pointer", boxShadow: "0 4px 16px rgba(255,107,53,.4)" }}>
+              🔥 HOT
+            </button>
+            <button onClick={() => answerHot(false)}
+              style={{ padding: "20px", borderRadius: 16, border: "none", background: "linear-gradient(135deg,#607D8B,#78909C)", color: "#fff", fontFamily: "var(--fd)", fontSize: 26, cursor: "pointer", boxShadow: "0 4px 16px rgba(96,125,139,.4)" }}>
+              ❄️ NOT
+            </button>
           </div>
-          {!spinResult
-            ? <button className="btn btn-coral" style={{ marginTop: 24, fontSize: 17, padding: "13px 46px" }} onClick={() => {
-              if (spinning) return;
-              setSpinning(true);
-              const idx = Math.floor(Math.random() * WHEEL_SEGS.length);
-              setSpinDeg(d => d + 1080 + idx * (360 / WHEEL_SEGS.length) + Math.random() * 35);
-              setTimeout(() => { setSpinning(false); setSpinResult(WHEEL_SEGS[idx]); }, 3400);
-            }} disabled={spinning}>{spinning ? "Spinning..." : "🎡 SPIN!"}</button>
-            : (
-              <div className="fade-in" style={{ textAlign: "center", marginTop: 24 }}>
-                <div style={{ fontFamily: "var(--fd)", fontSize: 52, color: "var(--coral)" }}>{spinResult.label}</div>
-                <div style={{ fontSize: 14, color: "var(--muted)", fontWeight: 700, marginBottom: 18 }}>multiplier on your next prediction!</div>
-                <button className="btn btn-coral" onClick={() => claim("spin", 0, "Lucky Spin 🎡")}>Claim Bonus!</button>
-              </div>
-            )
-          }
-        </div>
+        ) : (
+          <div className="fade-in" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 52, marginBottom: 8 }}>{hotAns === item.hot ? "🎯" : "😬"}</div>
+            <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: hotAns === item.hot ? "#00A152" : "#D32F2F", marginBottom: 8 }}>
+              {hotAns === item.hot ? "+2 pts!" : "No points"}
+            </div>
+            <div style={{ fontSize: 14, color: "var(--muted)", fontWeight: 700 }}>
+              The crowd says: {item.hot ? "🔥 HOT" : "❄️ NOT"}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
+
+  if (phase === "hot-result") return (
+    <div className="fade-in" style={{ maxWidth: 440, margin: "0 auto", textAlign: "center" }}>
+      <div style={{ fontSize: 72, marginBottom: 10 }}>{hotScore >= 16 ? "🔥🔥🔥" : hotScore >= 10 ? "🔥🔥" : "🔥"}</div>
+      <div style={{ fontFamily: "var(--fd)", fontSize: 40, color: "var(--navy)", marginBottom: 8 }}>HOT OR NOT DONE!</div>
+      <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{hotScore / 2}/{HOT_OR_NOT.length} matched the crowd</div>
+      <div className="score-big">{hotScore}</div>
+      <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>POINTS EARNED</div>
+      <button className="btn btn-coral" onClick={() => claim("hot", hotScore, "Hot or Not 🔥")}>Claim Points</button>
+    </div>
+  );
+
 
   // Score predictor phase
   if (phase === "score") {
@@ -1800,8 +1947,24 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
       {tab === "matches" && (
         <div className="fade-in">
           <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 14 }}>RECORD MATCH RESULT</div>
-          <div style={{ padding: "11px 16px", background: "rgba(0,191,165,.07)", borderRadius: 12, border: "1.5px solid rgba(0,191,165,.2)", fontSize: 13, color: "var(--teal)", fontWeight: 700, marginBottom: 16 }}>
-            💡 Use this when the Apps Script daily sync misses a result.
+          <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, padding: "11px 16px", background: "rgba(0,191,165,.07)", borderRadius: 12, border: "1.5px solid rgba(0,191,165,.2)", fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>
+              💡 Use this when the Apps Script daily sync misses a result.
+            </div>
+            <button className="btn btn-teal btn-sm" onClick={() => {
+              const week = getCurrentWeek();
+              const openCount = (matches || []).filter(m => m.status === "open").length;
+              sendChat(
+                "🔓 *Predictions are open for Week " + week + "!*\n" +
+                "*" + openCount + " matches* available to predict this week.\n\n" +
+                "🎯 Correct pick = *+20 pts*\n" +
+                "⏰ Predictions lock automatically at kick-off!\n\n" +
+                "Open the app and get your picks in! 👉 wc2026-competition.vercel.app"
+              );
+              showToast({ title: "Team notified! 💬", body: "Predictions open message sent to Google Chat" });
+            }}>
+              💬 Notify Team — Predictions Open
+            </button>
           </div>
           <div className="card aform" style={{ marginBottom: 22 }}>
             <label>Select Match</label>
@@ -1949,6 +2112,9 @@ export default function App() {
   const [page,         setPage]        = useState("dashboard");
   const [currentUser,  setCurrentUser] = useState(null);
   const [loading,      setLoading]     = useState(true);
+  const [showHowTo,    setShowHowTo]   = useState(() => {
+    try { return !localStorage.getItem("wc2026_howto_seen"); } catch(e) { return true; }
+  });
   const [toast,        setToast]       = useState(null);
   const [participants, setParticipants]= useState(PEOPLE.map(name => ({ name, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, portfolio: [] })));
   const [matches,      setMatches]     = useState([]);
@@ -1968,7 +2134,8 @@ export default function App() {
         const dbP = await sbGet("participants");
         if (dbP && dbP.length > 0) {
           const merged = PEOPLE.map(name => {
-            const db = dbP.find(d => d && d.name === name);
+            // Match by both id (lowercase) and name to handle inconsistency
+            const db = dbP.find(d => d && (d.name === name || d.id === name.toLowerCase()));
             return db
               ? { name, teamPts: db.team_pts || 0, predPts: db.pred_pts || 0, challengePts: db.challenge_pts || 0, bonusPts: db.bonus_pts || 0, portfolio: [] }
               : { name, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, portfolio: [] };
@@ -2016,6 +2183,19 @@ export default function App() {
 
         // Session restore handled by name picker
 
+        // 6. Load challenge completions (persists which challenges are done)
+        // We load for all users and store keyed by user so Challenge component can read
+        const dbAllComp = await sbGet("challenge_completions");
+        if (dbAllComp && dbAllComp.length > 0) {
+          // Store in a ref accessible to Challenge — grouped by user
+          const compByUser = {};
+          dbAllComp.forEach(c => {
+            if (!compByUser[c.user_id]) compByUser[c.user_id] = {};
+            compByUser[c.user_id]["w" + c.week + "_" + c.challenge_id] = c.pts_earned;
+          });
+          sessionStorage.setItem("wc2026_completions", JSON.stringify(compByUser));
+        }
+
       } catch(e) {
         console.error("Boot error:", e);
       }
@@ -2033,7 +2213,7 @@ export default function App() {
         if (dbP && dbP.length > 0) {
           const dbPort = await sbGet("portfolios");
           setParticipants(prev => prev.map(p => {
-            const db   = dbP.find(d => d && d.name === p.name);
+            const db   = dbP.find(d => d && (d.name === p.name || d.id === p.name.toLowerCase()));
             const port = (dbPort||[]).filter(pt => pt && pt.user_id === p.name.toLowerCase()).map(pt => ({ team: pt.team_id, slot: pt.slot_type }));
             return db ? { ...p, teamPts: db.team_pts||0, predPts: db.pred_pts||0, challengePts: db.challenge_pts||0, bonusPts: db.bonus_pts||0, portfolio: port.length > 0 ? port : p.portfolio } : p;
           }));
@@ -2250,6 +2430,16 @@ export default function App() {
           <div style={{ height: "100%", background: "var(--coral)", borderRadius: 3, animation: "loadbar 1.5s ease infinite" }} />
         </div>
       </div>
+    </React.Fragment>
+  );
+
+  if (!currentUser && showHowTo) return (
+    <React.Fragment>
+      <style>{CSS}</style>
+      <HowToPlay onDone={() => {
+        try { localStorage.setItem("wc2026_howto_seen", "1"); } catch(e) {}
+        setShowHowTo(false);
+      }} />
     </React.Fragment>
   );
 
