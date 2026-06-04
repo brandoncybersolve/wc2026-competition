@@ -270,11 +270,33 @@ const LIGHTNING_BANK = {
   ],
 };
 
-const FLAG_QUIZ_TEAMS = [
-  { id: "ger", name: "Germany" }, { id: "jpn", name: "Japan" },
-  { id: "mor", name: "Morocco" }, { id: "ned", name: "Netherlands" },
-  { id: "sen", name: "Senegal" },
-];
+const FLAG_QUIZ_BANK = {
+  1: [
+    { id:"ger", name:"Germany" }, { id:"jpn", name:"Japan" },
+    { id:"mor", name:"Morocco" }, { id:"ned", name:"Netherlands" },
+    { id:"sen", name:"Senegal" },
+  ],
+  2: [
+    { id:"bra", name:"Brazil" }, { id:"cro", name:"Croatia" },
+    { id:"ecu", name:"Ecuador" }, { id:"gha", name:"Ghana" },
+    { id:"swi", name:"Switzerland" },
+  ],
+  3: [
+    { id:"aus", name:"Australia" }, { id:"den", name:"Denmark" },
+    { id:"ira", name:"Iran" }, { id:"por", name:"Portugal" },
+    { id:"wal", name:"Wales" },
+  ],
+  4: [
+    { id:"alg", name:"Algeria" }, { id:"cam", name:"Cameroon" },
+    { id:"nor", name:"Norway" }, { id:"rsa", name:"South Africa" },
+    { id:"uzb", name:"Uzbekistan" },
+  ],
+  5: [
+    { id:"bih", name:"Bosnia" }, { id:"col", name:"Colombia" },
+    { id:"cpv", name:"Cape Verde" }, { id:"cze", name:"Czechia" },
+    { id:"sco", name:"Scotland" },
+  ],
+};
 
 const WHEEL_SEGS = [
   { label: "×1.0", color: "#7C4DFF" }, { label: "×1.1", color: "#00BFA5" },
@@ -284,19 +306,69 @@ const WHEEL_SEGS = [
 ];
 
 
-// ─── HOT OR NOT DATA ─────────────────────────────────────────────
-const HOT_OR_NOT = [
-  { s: "Messi is better than Ronaldo",                    hot: true  },
-  { s: "VAR has improved football",                       hot: false },
-  { s: "The World Cup is better than the Champions League", hot: true },
-  { s: "Penalty shootouts are a fair way to decide games", hot: false },
-  { s: "Goalkeepers are the most important position",     hot: false },
-  { s: "Brazil will win the 2026 World Cup",             hot: true  },
-  { s: "Football is the greatest sport on earth",        hot: true  },
-  { s: "The offside rule should be abolished",           hot: false },
-  { s: "Argentina deserved to win the 2022 World Cup",   hot: true  },
-  { s: "African teams are underrated at World Cups",     hot: true  },
-];
+// ─── HOT OR NOT DATA — 5 weeks ───────────────────────────────────
+const HOT_OR_NOT_BANK = {
+  1: [
+    { s: "Messi is better than Ronaldo",                      hot: true  },
+    { s: "VAR has improved football",                         hot: false },
+    { s: "The World Cup is better than the Champions League", hot: true  },
+    { s: "Penalty shootouts are a fair way to decide games",  hot: false },
+    { s: "Goalkeepers are the most important position",       hot: false },
+    { s: "Brazil will win the 2026 World Cup",               hot: true  },
+    { s: "Football is the greatest sport on earth",          hot: true  },
+    { s: "The offside rule should be abolished",             hot: false },
+    { s: "Argentina deserved to win the 2022 World Cup",     hot: true  },
+    { s: "African teams are underrated at World Cups",       hot: true  },
+  ],
+  2: [
+    { s: "Home advantage matters more than talent",           hot: false },
+    { s: "The 2026 World Cup format with 48 teams is better", hot: true  },
+    { s: "Strikers are more important than defenders",        hot: true  },
+    { s: "England will never win another World Cup",          hot: false },
+    { s: "Morocco was the biggest surprise of 2022",          hot: true  },
+    { s: "Managers make more difference than players",        hot: false },
+    { s: "The USA could win the 2026 World Cup",             hot: false },
+    { s: "Diving should result in a red card",               hot: true  },
+    { s: "The best league in the world is the Premier League", hot: true },
+    { s: "South Africa will make it out of their group",     hot: true  },
+  ],
+  3: [
+    { s: "Ronaldo's career is better than Messi's",          hot: false },
+    { s: "France are the favourites to win in 2026",         hot: true  },
+    { s: "A 0-0 draw can be an exciting match",              hot: false },
+    { s: "The golden boot winner is always the best player", hot: false },
+    { s: "Underdogs winning the World Cup would be boring",  hot: false },
+    { s: "More teams = more upsets = more excitement",       hot: true  },
+    { s: "Spain play the most beautiful football",           hot: true  },
+    { s: "The World Cup should be held every 2 years",       hot: false },
+    { s: "Neymar is overrated",                              hot: true  },
+    { s: "Scotland will qualify from their group",           hot: false },
+  ],
+  4: [
+    { s: "The penalty shootout is the most exciting part of football", hot: true },
+    { s: "Germany always underperform at major tournaments now", hot: true },
+    { s: "Argentina can defend their World Cup title",       hot: false },
+    { s: "A World Cup without Brazil in the final is wrong", hot: false },
+    { s: "Norway with Haaland will be a dark horse",         hot: true  },
+    { s: "The third place match should be scrapped",         hot: true  },
+    { s: "Goalline technology has made football fairer",     hot: true  },
+    { s: "Mbappé will be the best player at this World Cup", hot: true  },
+    { s: "Canada will surprise everyone at home",            hot: true  },
+    { s: "The 2026 final will be Argentina vs France again", hot: false },
+  ],
+  5: [
+    { s: "The World Cup final is the biggest event in sport", hot: true  },
+    { s: "Colombia are the most underrated team in 2026",    hot: true  },
+    { s: "This World Cup will produce the best ever final",  hot: true  },
+    { s: "Portugal without Ronaldo would struggle",          hot: false },
+    { s: "England will reach the semi finals",               hot: false },
+    { s: "The best World Cup ever was 2022",                 hot: false },
+    { s: "A South American team will win the 2026 cup",      hot: true  },
+    { s: "Japan can reach the quarter finals",               hot: true  },
+    { s: "The 2026 World Cup will break all viewing records", hot: true  },
+    { s: "Our office competition winner deserves a trophy",  hot: true  },
+  ],
+};
 
 const WEEK_SCHEDULE = {
   1: ["trivia", "flags", "hot"],
@@ -1345,8 +1417,10 @@ function Predictions({ user, matches, predictions, onSavePrediction, showToast }
 function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const week        = getCurrentWeek();
   const weekChalIds = WEEK_SCHEDULE[week] || WEEK_SCHEDULE[1];
-  const trivia      = TRIVIA_BANK[week]    || TRIVIA_BANK[1];
-  const lightning   = LIGHTNING_BANK[week] || LIGHTNING_BANK[1];
+  const trivia      = TRIVIA_BANK[week]      || TRIVIA_BANK[1];
+  const lightning   = LIGHTNING_BANK[week]   || LIGHTNING_BANK[1];
+  const flagTeams   = FLAG_QUIZ_BANK[week]   || FLAG_QUIZ_BANK[1];
+  const hotStatements = HOT_OR_NOT_BANK[week] || HOT_OR_NOT_BANK[1];
 
   const [completed,  setCompleted]  = useState(() => {
     // Load persisted completions from sessionStorage on mount
@@ -1434,9 +1508,9 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const answerHot = (pick) => {
     if (hotAns !== null) return;
     setHotAns(pick);
-    if (pick === HOT_OR_NOT[hotIdx].hot) setHotScore(s => s + 2);
+    if (pick === hotStatements[hotIdx].hot) setHotScore(s => s + 2);
     setTimeout(() => {
-      if (hotIdx + 1 < HOT_OR_NOT.length) {
+      if (hotIdx + 1 < hotStatements.length) {
         setHotIdx(i => i + 1);
         setHotAns(null);
       } else {
@@ -1517,20 +1591,20 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const answerF = (name) => {
     if (fAns !== null) return;
     setFAns(name);
-    if (name === FLAG_QUIZ_TEAMS[fIdx].name) setFScore(s => s + 3);
+    if (name === flagTeams[fIdx].name) setFScore(s => s + 3);
     setTimeout(() => {
-      if (fIdx + 1 < FLAG_QUIZ_TEAMS.length) { setFIdx(i => i + 1); setFAns(null); }
+      if (fIdx + 1 < flagTeams.length) { setFIdx(i => i + 1); setFAns(null); }
       else setPhase("flag-result");
     }, 900);
   };
 
   if (phase === "flags") {
-    const item = FLAG_QUIZ_TEAMS[fIdx];
+    const item = flagTeams[fIdx];
     const opts = getFlagOpts(item.name);
     return (
       <div className="fade-in" style={{ maxWidth: 440, margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <Back /><Dots total={FLAG_QUIZ_TEAMS.length} cur={fIdx} /><span className="badge bt">{fScore} pts</span>
+          <Back /><Dots total={flagTeams.length} cur={fIdx} /><span className="badge bt">{fScore} pts</span>
         </div>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
@@ -1624,8 +1698,8 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
 
   // Hot or Not phase
   if (phase === "hot") {
-    const item     = HOT_OR_NOT[hotIdx];
-    const progress = (hotIdx / HOT_OR_NOT.length) * 100;
+    const item     = hotStatements[hotIdx];
+    const progress = (hotIdx / hotStatements.length) * 100;
     return (
       <div className="fade-in" style={{ maxWidth: 480, margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -1638,7 +1712,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
           <div className="pfill" style={{ width: progress + "%", background: "var(--coral)" }} />
         </div>
         <div style={{ textAlign: "center", fontSize: 12, color: "var(--muted)", fontWeight: 700, marginBottom: 16 }}>
-          {hotIdx + 1} of {HOT_OR_NOT.length}
+          {hotIdx + 1} of {hotStatements.length}
         </div>
         {/* Statement card */}
         <div style={{ background: "var(--card)", borderRadius: 24, border: "2px solid var(--border)", padding: "36px 28px", textAlign: "center", marginBottom: 24, boxShadow: "var(--sh-lg)", minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1675,7 +1749,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     <div className="fade-in" style={{ maxWidth: 440, margin: "0 auto", textAlign: "center" }}>
       <div style={{ fontSize: 72, marginBottom: 10 }}>{hotScore >= 16 ? "🔥🔥🔥" : hotScore >= 10 ? "🔥🔥" : "🔥"}</div>
       <div style={{ fontFamily: "var(--fd)", fontSize: 40, color: "var(--navy)", marginBottom: 8 }}>HOT OR NOT DONE!</div>
-      <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{hotScore / 2}/{HOT_OR_NOT.length} matched the crowd</div>
+      <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{hotScore / 2}/{hotStatements.length} matched the crowd</div>
       <div className="score-big">{hotScore}</div>
       <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>POINTS EARNED</div>
       <button className="btn btn-coral" onClick={() => claim("hot", hotScore, "Hot or Not 🔥")}>Claim Points</button>
@@ -1684,6 +1758,15 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
 
 
   // Score predictor phase
+  const SCORE_MATCHES = {
+    1: { home: "mex", homeName: "Mexico",      away: "rsa", awayName: "South Africa" },
+    2: { home: "swi", homeName: "Switzerland", away: "can", awayName: "Canada"       },
+    3: { home: "bra", homeName: "Brazil",      away: "sco", awayName: "Scotland"     },
+    4: { home: "eng", homeName: "England",     away: "pan", awayName: "Panama"       },
+    5: { home: "arg", homeName: "Argentina",   away: "jor", awayName: "Jordan"       },
+  };
+  const scoreMatch = SCORE_MATCHES[week] || SCORE_MATCHES[1];
+
   if (phase === "score") {
     return (
       <div className="fade-in" style={{ maxWidth: 480, margin: "0 auto" }}>
@@ -1696,13 +1779,13 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
         <div className="card" style={{ marginBottom: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
             <div style={{ flex: 1, textAlign: "center" }}>
-              <Flag code="arg" size={32} style={{ margin: "0 auto 6px", display: "block" }} />
-              <div style={{ fontSize: 13, fontWeight: 800 }}>Argentina</div>
+              <Flag code={scoreMatch.home} size={32} style={{ margin: "0 auto 6px", display: "block" }} />
+              <div style={{ fontSize: 13, fontWeight: 800 }}>{scoreMatch.homeName}</div>
             </div>
             <div style={{ fontFamily: "var(--fd)", fontSize: 18, color: "var(--muted)" }}>VS</div>
             <div style={{ flex: 1, textAlign: "center" }}>
-              <Flag code="fra" size={32} style={{ margin: "0 auto 6px", display: "block" }} />
-              <div style={{ fontSize: 13, fontWeight: 800 }}>France</div>
+              <Flag code={scoreMatch.away} size={32} style={{ margin: "0 auto 6px", display: "block" }} />
+              <div style={{ fontSize: 13, fontWeight: 800 }}>{scoreMatch.awayName}</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "center" }}>
