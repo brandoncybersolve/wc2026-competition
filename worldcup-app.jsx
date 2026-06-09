@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 // ─── SUPABASE ────────────────────────────────────────────────────
 const SB_URL = "https://vxkyfdnyxyeuklslwrqw.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4a3lmZG55eHlldWtsc2x3cnF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0ODEyNTIsImV4cCI6MjA5NjA1NzI1Mn0.urDGKM1wKcXwjcRL2rGH5J_rPufzBMrJJG9pF51c4hY";
-const CHAT_WEBHOOK = "https://chat.googleapis.com/v1/spaces/AAQAsbel9VM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=wuScAAcgGBHYpjNNWax0GDJKIrjo2RVsFYFak1KMTeQ";
+const CHAT_WEBHOOK = "https://chat.googleapis.com/v1/spaces/AAQAjCaDXHI/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=9kO3hqM8C0rt4S_ddnqUD4U8piIuPXuftUUVK0-k80M";
 
 const sbHeaders = {
   "apikey": SB_KEY,
