@@ -379,20 +379,20 @@ const HOT_OR_NOT_BANK = {
 };
 
 const WEEK_SCHEDULE = {
-  1: ["trivia", "flags", "hot",       "memory"],
-  2: ["trivia", "lightning", "score", "memory"],
-  3: ["trivia", "flags", "lightning", "memory"],
-  4: ["trivia", "hot", "score",       "memory"],
-  5: ["trivia", "lightning", "score", "memory"],
+  1: ["trivia", "flags", "hot", "memory"],
+  2: ["trivia", "flags", "hot", "memory"],
+  3: ["trivia", "flags", "hot", "memory"],
+  4: ["trivia", "flags", "hot", "memory"],
+  5: ["trivia", "flags", "hot", "memory"],
 };
 
 const CHALLENGE_INFO = {
-  trivia:    { icon: "🧠", title: "Trivia Blitz",     desc: "5 questions · 20 pts · ~45 secs",  pts: 20 },
+  trivia:    { icon: "🧠", title: "Trivia Blitz",     desc: "5 questions · 15 pts · ~45 secs",  pts: 15 },
   flags:     { icon: "🌍", title: "Flag Frenzy",      desc: "5 flags · 15 pts · ~30 secs",      pts: 15 },
-  hot:       { icon: "🔥", title: "Hot or Not",       desc: "10 football takes · 20 pts · ~30 secs", pts: 20 },
-  lightning: { icon: "⚡", title: "Lightning Round",  desc: "10 true/false · 20 pts · 30 secs", pts: 20 },
-  score:     { icon: "🎯", title: "Score Predictor",  desc: "Predict exact score · 30 pts",     pts: 30 },
-  memory:    { icon: "🧩", title: "Memory Match",      desc: "Match 6 flag pairs · 15 pts",       pts: 15 },
+  hot:       { icon: "🔥", title: "Hot or Not",       desc: "10 football takes · 15 pts · ~30 secs", pts: 15 },
+  lightning: { icon: "⚡", title: "Lightning Round",  desc: "10 true/false · 15 pts · 30 secs", pts: 15 },
+  score:     { icon: "🎯", title: "Score Predictor",  desc: "Predict exact score · 15 pts",     pts: 15 },
+  memory:    { icon: "🧩", title: "Memory Match",      desc: "Match 6 flag pairs · 15 pts",      pts: 15 },
 };
 
 function getCurrentWeek() {
@@ -1583,7 +1583,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const answerHot = (pick) => {
     if (hotAns !== null) return;
     setHotAns(pick);
-    if (pick === hotStatements[hotIdx].hot) setHotScore(s => s + 2);
+    if (pick === hotStatements[hotIdx].hot) setHotScore(s => s + 1.5);
     setTimeout(() => {
       if (hotIdx + 1 < hotStatements.length) {
         setHotIdx(i => i + 1);
@@ -1690,7 +1690,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     <div className="fade-in" style={{ maxWidth: 440, margin: "0 auto", textAlign: "center" }}>
       <div style={{ fontSize: 72, marginBottom: 10 }}>{score >= 16 ? "🏆" : score >= 8 ? "🥈" : "💪"}</div>
       <div style={{ fontFamily: "var(--fd)", fontSize: 40, color: "var(--navy)", marginBottom: 8 }}>TRIVIA DONE!</div>
-      <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{score / 4}/{trivia.length} correct</div>
+      <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{score / 3}/{trivia.length} correct</div>
       <div className="score-big">{score}</div>
       <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>POINTS EARNED</div>
       <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
@@ -1755,7 +1755,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const answerL = (ans) => {
     if (lAns !== null) return;
     setLAns(ans);
-    if (ans === lightning[lIdx].ans) setLScore(s => s + 2);
+    if (ans === lightning[lIdx].ans) setLScore(s => s + 1.5);
     setTimeout(() => {
       if (lIdx + 1 < lightning.length) { setLIdx(i => i + 1); setLAns(null); }
       else { clearInterval(lTimer.current); setLDone(true); setPhase("lightning-result"); }
@@ -1802,7 +1802,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     <div className="fade-in" style={{ maxWidth: 440, margin: "0 auto", textAlign: "center" }}>
       <div style={{ fontSize: 72, marginBottom: 10 }}>{lScore >= 16 ? "⚡⚡" : "⚡"}</div>
       <div style={{ fontFamily: "var(--fd)", fontSize: 40, color: "var(--navy)", marginBottom: 8 }}>LIGHTNING DONE!</div>
-      <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{lScore / 2}/{lightning.length} correct</div>
+      <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{Math.round(lScore / 1.5)}/{lightning.length} correct</div>
       <div className="score-big">{lScore}</div>
       <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>POINTS EARNED</div>
       <button className="btn btn-coral" onClick={() => claim("lightning", lScore, "Lightning Round ⚡")}>Claim Points</button>
@@ -1979,7 +1979,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
               <div style={{ fontSize: 56, marginBottom: 10 }}>🔒</div>
               <div style={{ fontFamily: "var(--fd)", fontSize: 28, color: "var(--navy)", marginBottom: 8 }}>LOCKED IN!</div>
               <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 20 }}>You&apos;ll earn 30 pts if your exact score is correct!</div>
-              <button className="btn btn-coral" onClick={() => claim("score", 0, "Score Predictor 🎯")}>Done</button>
+              <button className="btn btn-coral" onClick={() => claim("score", 15, "Score Predictor 🎯")}>Done</button>
             </div>
           )
         }
