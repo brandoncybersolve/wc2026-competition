@@ -270,6 +270,14 @@ const LIGHTNING_BANK = {
   ],
 };
 
+const MEMORY_BANK = {
+  1: ["spa","fra","eng","bra","arg","ger"],
+  2: ["por","ned","bel","uru","usa","mex"],
+  3: ["jpn","mor","cro","den","swi","sen"],
+  4: ["aus","pol","kor","gha","nor","tur"],
+  5: ["rsa","cze","col","irq","swe","ecu"],
+};
+
 const FLAG_QUIZ_BANK = {
   1: [
     { id:"ger", name:"Germany" }, { id:"jpn", name:"Japan" },
@@ -371,11 +379,11 @@ const HOT_OR_NOT_BANK = {
 };
 
 const WEEK_SCHEDULE = {
-  1: ["trivia", "flags", "hot"],
-  2: ["trivia", "lightning", "score"],
-  3: ["trivia", "flags", "lightning"],
-  4: ["trivia", "hot", "score"],
-  5: ["trivia", "lightning", "score"],
+  1: ["trivia", "flags", "hot",       "memory"],
+  2: ["trivia", "lightning", "score", "memory"],
+  3: ["trivia", "flags", "lightning", "memory"],
+  4: ["trivia", "hot", "score",       "memory"],
+  5: ["trivia", "lightning", "score", "memory"],
 };
 
 const CHALLENGE_INFO = {
@@ -384,6 +392,7 @@ const CHALLENGE_INFO = {
   hot:       { icon: "🔥", title: "Hot or Not",       desc: "10 football takes · 20 pts · ~30 secs", pts: 20 },
   lightning: { icon: "⚡", title: "Lightning Round",  desc: "10 true/false · 20 pts · 30 secs", pts: 20 },
   score:     { icon: "🎯", title: "Score Predictor",  desc: "Predict exact score · 30 pts",     pts: 30 },
+  memory:    { icon: "🧩", title: "Memory Match",      desc: "Match 6 flag pairs · 15 pts",       pts: 15 },
 };
 
 function getCurrentWeek() {
@@ -1507,6 +1516,13 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const [hotIdx,   setHotIdx]   = useState(0);
   const [hotScore, setHotScore] = useState(0);
   const [hotAns,   setHotAns]   = useState(null);
+  // Memory game state
+  const [memCards,    setMemCards]    = useState([]);
+  const [memFlipped,  setMemFlipped]  = useState([]);
+  const [memMatched,  setMemMatched]  = useState([]);
+  const [memMoves,    setMemMoves]    = useState(0);
+  const [memLocked,   setMemLocked]   = useState(false);
+  const [memComplete, setMemComplete] = useState(false);
   const [spPick,     setSpPick]     = useState({ matchId: "m1", home: "", away: "" });
   const [spDone,     setSpDone]     = useState(false);
   const lTimer = useRef(null);
@@ -1559,6 +1575,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     setFIdx(0); setFAns(null); setFScore(0);
     setLIdx(0); setLScore(0); setLAns(null); setLTime(30); setLDone(false);
     setHotIdx(0); setHotScore(0); setHotAns(null);
+    setMemCards([]); setMemFlipped([]); setMemMatched([]); setMemMoves(0); setMemLocked(false); setMemComplete(false);
     setSpPick({ matchId: "m1", home: "", away: "" }); setSpDone(false);
     if (lTimer.current) clearInterval(lTimer.current);
   };
@@ -1575,6 +1592,44 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
         setPhase("hot-result");
       }
     }, 1000);
+  };
+
+  const initMemory = () => {
+    const teamIds = MEMORY_BANK[week] || MEMORY_BANK[1];
+    const pairs = [...teamIds, ...teamIds].map((id, i) => ({ id, uid: i }));
+    for (let i = pairs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+    }
+    setMemCards(pairs);
+    setMemFlipped([]); setMemMatched([]); setMemMoves(0); setMemLocked(false); setMemComplete(false);
+    setPhase("memory");
+  };
+
+  const flipCard = (uid) => {
+    if (memLocked) return;
+    if (memFlipped.includes(uid)) return;
+    if (memMatched.includes(uid)) return;
+    const newFlipped = [...memFlipped, uid];
+    setMemFlipped(newFlipped);
+    if (newFlipped.length === 2) {
+      setMemMoves(m => m + 1);
+      setMemLocked(true);
+      const cardA = memCards.find(c => c.uid === newFlipped[0]);
+      const cardB = memCards.find(c => c.uid === newFlipped[1]);
+      if (cardA && cardB && cardA.id === cardB.id) {
+        const newMatched = [...memMatched, cardA.uid, cardB.uid];
+        setMemMatched(newMatched);
+        setMemFlipped([]);
+        setMemLocked(false);
+        if (newMatched.length === memCards.length) {
+          setMemComplete(true);
+          setTimeout(() => setPhase("memory-result"), 600);
+        }
+      } else {
+        setTimeout(() => { setMemFlipped([]); setMemLocked(false); }, 900);
+      }
+    }
   };
 
   const Back = () => <button className="btn btn-outline btn-sm" onClick={reset}>← Back</button>;
@@ -1815,6 +1870,67 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   );
 
 
+  // Memory game phase
+  if (phase === "memory") {
+    const cols = 4;
+    const matched = memMatched.length / 2;
+    const total   = memCards.length / 2;
+    return (
+      <div className="fade-in" style={{ maxWidth: 540, margin: "0 auto" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <Back />
+          <div style={{ fontFamily:"var(--fd)", fontSize:18, color:"var(--navy)" }}>🧩 MEMORY MATCH</div>
+          <span className="badge bt">{matched}/{total} pairs</span>
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:16 }}>
+          <div style={{ fontSize:13, color:"var(--muted)", fontWeight:700 }}>Moves: <strong style={{ color:"var(--navy)" }}>{memMoves}</strong></div>
+          <div style={{ fontSize:13, color:"var(--muted)", fontWeight:700 }}>Find all 6 pairs!</div>
+        </div>
+        {/* Card grid — 4 columns x 3 rows */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+          {memCards.map(card => {
+            const isFlipped  = memFlipped.includes(card.uid);
+            const isMatched  = memMatched.includes(card.uid);
+            const showFront  = isFlipped || isMatched;
+            return (
+              <div key={card.uid} onClick={() => flipCard(card.uid)}
+                style={{ height:80, borderRadius:14, cursor: isMatched?"default":"pointer", perspective:600, transition:"transform .1s" }}>
+                <div style={{ width:"100%", height:"100%", position:"relative", transformStyle:"preserve-3d", transition:"transform .35s", transform: showFront?"rotateY(180deg)":"rotateY(0deg)" }}>
+                  {/* Back of card */}
+                  <div style={{ position:"absolute", width:"100%", height:"100%", backfaceVisibility:"hidden", borderRadius:14, background: isMatched?"rgba(0,191,165,.1)":"linear-gradient(135deg,var(--navy),#2D2F7A)", display:"flex", alignItems:"center", justifyContent:"center", border:"2px solid "+(isMatched?"var(--teal)":"rgba(255,255,255,.1)"), boxShadow:"0 3px 10px rgba(0,0,0,.15)" }}>
+                    <span style={{ fontSize:28, opacity:.6 }}>⚽</span>
+                  </div>
+                  {/* Front of card — flag */}
+                  <div style={{ position:"absolute", width:"100%", height:"100%", backfaceVisibility:"hidden", transform:"rotateY(180deg)", borderRadius:14, background: isMatched?"rgba(0,191,165,.08)":"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", border:"2px solid "+(isMatched?"var(--teal)":"var(--border)"), boxShadow:"0 3px 10px rgba(0,0,0,.08)" }}>
+                    <div style={{ textAlign:"center" }}>
+                      <Flag code={card.id} size={36} style={{ margin:"0 auto 4px", display:"block" }} />
+                      <div style={{ fontSize:9, fontWeight:800, color: isMatched?"var(--teal)":"var(--muted)" }}>{getTeam(card.id).name}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "memory-result") return (
+    <div className="fade-in" style={{ maxWidth:440, margin:"0 auto", textAlign:"center" }}>
+      <div style={{ fontSize:72, marginBottom:10 }}>🧩</div>
+      <div style={{ fontFamily:"var(--fd)", fontSize:40, color:"var(--navy)", marginBottom:8 }}>MEMORY MASTER!</div>
+      <div style={{ color:"var(--muted)", fontWeight:700, marginBottom:8 }}>All 6 pairs matched in {memMoves} moves!</div>
+      <div style={{ fontSize:13, color:"var(--muted)", fontWeight:600, marginBottom:24 }}>{memMoves <= 8 ? "🔥 Incredible memory!" : memMoves <= 12 ? "💪 Well done!" : "✅ Completed!"}</div>
+      <div className="score-big">15</div>
+      <div style={{ fontSize:13, color:"var(--muted)", fontWeight:700, marginBottom:24 }}>POINTS EARNED</div>
+      <div style={{ display:"flex", gap:12, justifyContent:"center" }}>
+        <button className="btn btn-coral" onClick={() => claim("memory", 15, "Memory Match 🧩")}>Claim Points</button>
+        <button className="btn btn-outline" onClick={initMemory}>Play Again</button>
+      </div>
+    </div>
+  );
+
   // Score predictor phase
   const SCORE_MATCHES = {
     1: { home: "mex", homeName: "Mexico",      away: "rsa", awayName: "South Africa" },
@@ -1916,7 +2032,8 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
               <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: done ? "var(--muted)" : "var(--coral)" }}>
                 {ch.pts > 0 ? ch.pts + " pts" : "Bonus"}
               </div>
-              <button className={"btn btn-sm " + (done ? "btn-outline" : "btn-coral")} style={{ marginTop: 8 }} disabled={done} onClick={() => setPhase(id)}>
+              <button className={"btn btn-sm " + (done ? "btn-outline" : "btn-coral")} style={{ marginTop: 8 }} disabled={done}
+                onClick={() => id === "memory" ? initMemory() : setPhase(id)}>
                 {done ? "Completed" : "Start →"}
               </button>
             </div>
