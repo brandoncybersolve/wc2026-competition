@@ -883,50 +883,51 @@ function Onboarding({ onComplete, claimedTeams, eliteAssign, whoOverride }) {
 // ─── DASHBOARD ────────────────────────────────────────────────────
 function Dashboard({ user, participants, matches, setPage, showToast }) {
   const me = (participants || []).find(p => p.name === user) || { name: user, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, portfolio: [] };
-  const sorted = [...(participants || [])].sort((a, b) => (b.teamPts + b.predPts + b.challengePts + b.bonusPts) - (a.teamPts + a.predPts + a.challengePts + a.bonusPts));
-  const myTotal = me.teamPts + me.predPts + me.challengePts + me.bonusPts;
-  const myRank  = sorted.findIndex(p => p.name === user) + 1;
-  const leader  = sorted[0] || me;
-  const gap     = (leader.teamPts + leader.predPts + leader.challengePts + leader.bonusPts) - myTotal;
+  const myTotal  = me.teamPts + me.predPts + me.challengePts + me.bonusPts;
+  const sorted   = [...(participants || [])].sort((a,b) => (b.teamPts+b.predPts+b.challengePts+b.bonusPts)-(a.teamPts+a.predPts+a.challengePts+a.bonusPts));
+  const myRank   = sorted.findIndex(p => p.name === user) + 1;
+  const leader   = sorted[0] || me;
+  const gap      = (leader.teamPts+leader.predPts+leader.challengePts+leader.bonusPts) - myTotal;
   const openMatches = (matches || []).filter(m => m.status === "open").length;
 
-  // Stage points for underdog ranking
-  const STAGE_ORDER = ["Group Stage","Round of 32","Round of 16","Quarter Final","Semi Final","Final","Champion"];
+  // Prize leaderboard data
+  const STAGE_ORDER   = ["Group Stage","Round of 32","Round of 16","Quarter Final","Semi Final","Final","Champion"];
+  const getUnderdogStage = p => { const d = (p.portfolio||[]).find(pt=>pt.slot==="underdog"); return d && d.stage ? STAGE_ORDER.indexOf(d.stage) : 0; };
+  const predChalPts   = p => (p.predPts||0) + (p.challengePts||0);
+  const overallSorted   = [...(participants||[])].sort((a,b)=>(b.teamPts+b.predPts+b.challengePts+b.bonusPts)-(a.teamPts+a.predPts+a.challengePts+a.bonusPts));
+  const underdogSorted  = [...(participants||[])].filter(p=>(p.portfolio||[]).find(pt=>pt.slot==="underdog")).sort((a,b)=>getUnderdogStage(b)-getUnderdogStage(a));
+  const predictorSorted = [...(participants||[])].sort((a,b)=>predChalPts(b)-predChalPts(a));
 
-  const getUnderdogStage = (p) => {
-    const dog = (p.portfolio || []).find(pt => pt.slot === "underdog");
-    if (!dog) return -1;
-    return dog.stage ? STAGE_ORDER.indexOf(dog.stage) : 0;
-  };
-
-  const predChalPts = (p) => (p.predPts || 0) + (p.challengePts || 0);
-
-  const overallSorted    = [...(participants||[])].sort((a,b) => (b.teamPts+b.predPts+b.challengePts+b.bonusPts) - (a.teamPts+a.predPts+a.challengePts+a.bonusPts));
-  const underdogSorted   = [...(participants||[])].filter(p => (p.portfolio||[]).find(pt=>pt.slot==="underdog")).sort((a,b) => getUnderdogStage(b) - getUnderdogStage(a));
-  const predictorSorted  = [...(participants||[])].sort((a,b) => predChalPts(b) - predChalPts(a));
-
-  const MiniLB = ({ data, valueKey, color, showDog }) => (
-    <div className="card" style={{ marginBottom: 0 }}>
-      {(data||[]).length === 0 && <div style={{ fontSize:12, color:"var(--muted)", fontWeight:700, padding:"8px 0" }}>No data yet</div>}
+  const PrizeLB = ({ title, icon, prize, data, getValue, color, showDog }) => (
+    <div className="card" style={{ height:"100%" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", margin:"-24px -24px 14px", borderRadius:"18px 18px 0 0", background: color === "var(--teal)" ? "linear-gradient(135deg,var(--teal),#00A896)" : color === "#B8860B" ? "linear-gradient(135deg,#FFD600,#FFB300)" : "linear-gradient(135deg,var(--coral),#FF8C5A)" }}>
+        <span style={{ fontSize:22 }}>{icon}</span>
+        <div>
+          <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>{title}</div>
+          <div style={{ fontSize:11, color:"rgba(255,255,255,.85)", fontWeight:700 }}>{prize}</div>
+        </div>
+      </div>
       {(data||[]).map((p,i) => {
         const medals = ["🥇","🥈","🥉","4️⃣","5️⃣"];
         const isMe   = p.name === user;
-        const val    = valueKey(p);
+        const val    = getValue(p);
         const dog    = (p.portfolio||[]).find(pt=>pt.slot==="underdog");
         return (
-          <div key={p.name} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 10px", borderRadius:12, marginBottom:6, background: isMe ? "rgba(255,107,53,.06)" : "var(--bg)", border: isMe ? "1.5px solid var(--coral)" : "1.5px solid transparent" }}>
+          <div key={p.name} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 10px", borderRadius:12, marginBottom:6, background: isMe?"rgba(255,107,53,.06)":"var(--bg)", border: isMe?"1.5px solid var(--coral)":"1.5px solid transparent" }}>
             <div style={{ fontFamily:"var(--fd)", fontSize:i<3?16:12, width:24, textAlign:"center" }}>{i<3?medals[i]:i+1}</div>
-            <Avatar name={p.name} size={26} />
+            <Avatar name={p.name} size={28} />
             <div style={{ flex:1 }}>
-              <div style={{ fontWeight:800, fontSize:12, color:"var(--navy)" }}>{p.name}{isMe?" (you)":""}</div>
+              <div style={{ fontWeight:800, fontSize:13, color:"var(--navy)" }}>{p.name}{isMe?" (you)":""}</div>
               {showDog && dog && (
                 <div style={{ display:"flex", alignItems:"center", gap:4, marginTop:2 }}>
-                  <Flag code={dog.team} size={12} />
+                  <Flag code={dog.team} size={14} />
                   <span style={{ fontSize:10, color:"var(--muted)", fontWeight:700 }}>{getTeam(dog.team).name} · {dog.stage||"Group Stage"}</span>
                 </div>
               )}
             </div>
-            <div style={{ fontFamily:"var(--fd)", fontSize:16, color }}>{typeof val === "number" && val >= 0 ? val : ""}</div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:16, color:color==="var(--teal)"?"var(--teal)":"var(--coral)" }}>
+              {showDog ? (STAGE_ORDER[val]||"Group Stage").replace(" Stage","") : val}
+            </div>
           </div>
         );
       })}
@@ -935,153 +936,125 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
 
   return (
     <div className="fade-in">
-      <div className="phead">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-          <div>
-            <div className="ptitle">Hey {user}! 👋</div>
-            <div className="psub">Tournament starts Jun 11 · {openMatches} match{openMatches !== 1 ? "es" : ""} open for prediction</div>
-          </div>
-          <span className="badge bc pulse">🔴 LIVE</span>
-        </div>
-      </div>
 
-      {/* Main 2-col layout */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 360px", gap:24, alignItems:"start" }}>
-
-        {/* LEFT — Hero + Challenge + Live Standings + My Teams */}
+      {/* ── HEADER ROW ─────────────────────────────────────── */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, flexWrap:"wrap", gap:12 }}>
         <div>
-
-      {/* Hero */}
-      <div style={{ background: "linear-gradient(135deg,var(--navy) 0%,#2D2F7A 100%)", borderRadius: 24, padding: "26px 30px", marginBottom: 20, boxShadow: "0 12px 40px rgba(26,27,75,.25)", color: "#fff", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, background: "rgba(255,107,53,.15)", borderRadius: "50%" }} />
-        <div style={{ position: "relative", display: "flex", gap: 28, alignItems: "center", flexWrap: "wrap" }}>
-          {[
-            { lbl: "Total Points", val: myTotal,              color: "#FFD600" },
-            { lbl: "Rank",          val: "#" + myRank,        color: "#fff" },
-            { lbl: "vs Leader",     val: gap > 0 ? "-" + gap : "🏆", color: gap > 0 ? "#FF8A80" : "#69F0AE" },
-          ].map((item, i) => (
-            <div key={item.lbl} style={{ display: "flex", gap: 28, alignItems: "center" }}>
-              {i > 0 && <div style={{ width: 2, height: 60, background: "rgba(255,255,255,.12)" }} />}
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.5)", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 4 }}>{item.lbl}</div>
-                <div style={{ fontFamily: "var(--fd)", fontSize: 52, color: item.color, lineHeight: 1 }}>{item.val}</div>
-              </div>
-            </div>
-          ))}
-          <div style={{ flex: 1, minWidth: 160 }}>
-            {[
-              { lbl: "Teams",       pts: me.teamPts,      max: 500, color: "#FFD600" },
-              { lbl: "Predictions", pts: me.predPts,      max: 300, color: "#64FFDA" },
-              { lbl: "Challenges",  pts: me.challengePts, max: 250, color: "#FFAB91" },
-            ].map(r => (
-              <div key={r.lbl} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 800, marginBottom: 3 }}>
-                  <span style={{ color: "rgba(255,255,255,.5)" }}>{r.lbl}</span>
-                  <span style={{ color: r.color }}>{r.pts} pts</span>
-                </div>
-                <div style={{ background: "rgba(255,255,255,.1)", borderRadius: 4, height: 6, overflow: "hidden" }}>
-                  <div style={{ height: "100%", borderRadius: 4, background: r.color, width: Math.min((r.pts / r.max) * 100, 100) + "%", transition: "width .9s ease" }} />
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="ptitle">Hey {user}! 👋</div>
+          <div className="psub">Tournament starts Jun 11 · {openMatches} match{openMatches!==1?"es":""} open for prediction</div>
         </div>
+        <span className="badge bc pulse">🔴 LIVE</span>
       </div>
 
-      <div className="g2" style={{ marginBottom: 20 }}>
-        {/* Challenge CTA */}
-        <div className="card" style={{ borderColor: "rgba(255,107,53,.3)", background: "linear-gradient(135deg,rgba(255,107,53,.05),#fff)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div className="ctitle">🎮 Week {getCurrentWeek()} Challenge</div>
-            <span className="badge bc">NEW!</span>
+      {/* ── STATS BAR ──────────────────────────────────────── */}
+      <div style={{ background:"linear-gradient(135deg,var(--navy) 0%,#2D2F7A 100%)", borderRadius:20, padding:"20px 28px", marginBottom:24, boxShadow:"0 12px 40px rgba(26,27,75,.25)", color:"#fff", display:"flex", gap:0, alignItems:"center", flexWrap:"wrap" }}>
+        {[
+          { lbl:"Total Points", val:myTotal,              color:"#FFD600",  fd:true },
+          { lbl:"Rank",          val:"#"+myRank,          color:"#fff",     fd:true },
+          { lbl:"vs Leader",     val:gap>0?"-"+gap:"🏆",  color:gap>0?"#FF8A80":"#69F0AE", fd:true },
+          { lbl:"Team Pts",      val:me.teamPts,          color:"#FFD600",  fd:false },
+          { lbl:"Pred Pts",      val:me.predPts,          color:"#64FFDA",  fd:false },
+          { lbl:"Challenge Pts", val:me.challengePts,     color:"#FFAB91",  fd:false },
+        ].map((item,i) => (
+          <div key={item.lbl} style={{ display:"flex", alignItems:"center" }}>
+            {i>0 && <div style={{ width:1, height:50, background:"rgba(255,255,255,.12)", margin:"0 24px" }} />}
+            <div>
+              <div style={{ fontSize:11, fontWeight:800, color:"rgba(255,255,255,.5)", letterSpacing:"1px", textTransform:"uppercase", marginBottom:4 }}>{item.lbl}</div>
+              <div style={{ fontFamily: item.fd?"var(--fd)":"var(--fb)", fontSize:item.fd?40:22, fontWeight:item.fd?400:800, color:item.color, lineHeight:1 }}>{item.val}</div>
+            </div>
           </div>
-          <div style={{ fontWeight: 800, fontSize: 15, color: "var(--navy)", marginBottom: 4 }}>Weekly Challenges Ready</div>
-          <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginBottom: 16 }}>3 challenges available this week!</div>
+        ))}
+      </div>
+
+      {/* ── MAIN 3-COLUMN GRID ─────────────────────────────── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20, marginBottom:20 }}>
+
+        {/* Col 1 — Overall Winner */}
+        <PrizeLB
+          title="OVERALL WINNER" icon="🏆" prize="R500 · highest total points"
+          data={overallSorted} getValue={p=>p.teamPts+p.predPts+p.challengePts+p.bonusPts}
+          color="#B8860B"
+        />
+
+        {/* Col 2 — Underdog Glory */}
+        <PrizeLB
+          title="UNDERDOG GLORY" icon="🐶" prize="R500 · get your underdog to the QF"
+          data={underdogSorted} getValue={getUnderdogStage}
+          color="var(--coral)" showDog={true}
+        />
+
+        {/* Col 3 — Top Predictor */}
+        <PrizeLB
+          title="TOP PREDICTOR" icon="🎯" prize="R1000 · predictions + challenges"
+          data={predictorSorted} getValue={predChalPts}
+          color="var(--teal)"
+        />
+      </div>
+
+      {/* ── BOTTOM 2-COLUMN GRID ───────────────────────────── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20 }}>
+
+        {/* Challenge CTA */}
+        <div className="card" style={{ borderColor:"rgba(255,107,53,.3)", background:"linear-gradient(135deg,rgba(255,107,53,.05),#fff)", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div className="ctitle">🎮 Week {getCurrentWeek()} Challenge</div>
+              <span className="badge bc">NEW!</span>
+            </div>
+            <div style={{ fontWeight:800, fontSize:15, color:"var(--navy)", marginBottom:4 }}>Weekly Challenges Ready</div>
+            <div style={{ fontSize:13, color:"var(--muted)", fontWeight:600, marginBottom:16 }}>3 challenges available this week — Trivia, Flags, Hot or Not!</div>
+          </div>
           <button className="btn btn-coral" onClick={() => setPage("challenge")}>Start Challenge →</button>
         </div>
 
-        {/* Mini leaderboard */}
+        {/* Live Standings */}
         <div className="card">
-          <div className="ctitle" style={{ marginBottom: 12 }}>📊 Live Standings</div>
-          {sorted.map((p, i) => {
-            const medals = ["🥇", "🥈", "🥉"];
+          <div className="ctitle" style={{ marginBottom:12 }}>📊 Live Standings</div>
+          {sorted.map((p,i) => {
+            const medals = ["🥇","🥈","🥉"];
             const isMe   = p.name === user;
-            const total  = p.teamPts + p.predPts + p.challengePts + p.bonusPts;
+            const total  = p.teamPts+p.predPts+p.challengePts+p.bonusPts;
             return (
-              <div key={p.name} className={"lbrow " + (isMe ? "me" : "") + (i === 0 ? " top" : "")} style={{ padding: "8px 12px" }}>
-                <div style={{ fontFamily: "var(--fd)", fontSize: i < 3 ? 20 : 14, width: 32, textAlign: "center" }}>{i < 3 ? medals[i] : i + 1}</div>
+              <div key={p.name} className={"lbrow "+(isMe?"me":"")+(i===0?" top":"")} style={{ padding:"8px 12px" }}>
+                <div style={{ fontFamily:"var(--fd)", fontSize:i<3?20:14, width:32, textAlign:"center" }}>{i<3?medals[i]:i+1}</div>
                 <Avatar name={p.name} size={30} />
-                <div style={{ flex: 1, fontWeight: 800, fontSize: 13 }}>{p.name}{isMe ? " (you)" : ""}</div>
-                <div style={{ fontFamily: "var(--fd)", fontSize: 20, color: "var(--coral)" }}>{total}</div>
+                <div style={{ flex:1, fontWeight:800, fontSize:13 }}>{p.name}{isMe?" (you)":""}</div>
+                <div style={{ fontFamily:"var(--fd)", fontSize:20, color:"var(--coral)" }}>{total}</div>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* My teams */}
+      {/* ── MY TEAMS — FULL WIDTH ──────────────────────────── */}
       {me.portfolio && me.portfolio.length > 0 && (
         <div className="card">
-          <div className="ctitle" style={{ marginBottom: 14 }}>👕 My Teams</div>
-          <div className="g4">
+          <div className="ctitle" style={{ marginBottom:14 }}>👕 My Teams</div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
             {me.portfolio.map(pt => {
-              const team = getTeam(pt.team);
-              const mult = SLOT_MULT[pt.slot] || 1;
-              const slotColors = { favourite: "#B8860B", contender: "var(--teal)", underdog: "var(--coral)" };
-              const slotEmoji  = { favourite: "⭐", contender: "🥊", underdog: "🐶" };
+              const team  = getTeam(pt.team);
+              const mult  = SLOT_MULT[pt.slot] || 1;
+              const slotColors = { favourite:"#B8860B", contender:"var(--teal)", underdog:"var(--coral)" };
+              const slotEmoji  = { favourite:"⭐", contender:"🥊", underdog:"🐶" };
               const color = slotColors[pt.slot] || "var(--muted)";
               return (
-                <div key={pt.team} className="tcard" style={{ background: "var(--bg)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <span className="badge" style={{ background: color + "18", color, border: "1.5px solid " + color + "33", fontSize: 10 }}>{slotEmoji[pt.slot]} {mult}×</span>
+                <div key={pt.team} style={{ background:"var(--bg)", borderRadius:16, padding:"16px", border:"2px solid "+color+"33", borderTop:"4px solid "+color, textAlign:"center" }}>
+                  <div style={{ display:"flex", justifyContent:"center", marginBottom:10 }}>
+                    <Flag code={team.id} size={48} style={{ borderRadius:8 }} />
                   </div>
-                  <Flag code={team.id} size={32} style={{ marginBottom: 6 }} />
-                  <div style={{ fontFamily: "var(--fd)", fontSize: 14, color: "var(--navy)" }}>{team.name}</div>
+                  <div style={{ fontFamily:"var(--fd)", fontSize:16, color:"var(--navy)", marginBottom:6 }}>{team.name}</div>
+                  <span className="badge" style={{ background:color+"18", color, border:"1.5px solid "+color+"44", fontSize:11 }}>{slotEmoji[pt.slot]} {mult}×</span>
                 </div>
               );
             })}
           </div>
         </div>
       )}
-        </div> {/* end left column */}
 
-        {/* RIGHT — 3 Prize Leaderboards */}
-        <div>
-          {/* Overall Winner */}
-          <div style={{ background:"linear-gradient(135deg,#FFD600,#FFB300)", borderRadius:14, padding:"12px 16px", marginBottom:10, display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:22 }}>🏆</span>
-            <div>
-              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>OVERALL WINNER</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R500 prize · highest total points</div>
-            </div>
-          </div>
-          <MiniLB data={overallSorted} valueKey={p=>(p.teamPts+p.predPts+p.challengePts+p.bonusPts)} color="var(--coral)" />
-
-          {/* Underdog Glory */}
-          <div style={{ background:"linear-gradient(135deg,var(--coral),#FF8C5A)", borderRadius:14, padding:"12px 16px", marginBottom:10, marginTop:18, display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:22 }}>🐶</span>
-            <div>
-              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>UNDERDOG GLORY</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R500 prize · reach the QF</div>
-            </div>
-          </div>
-          <MiniLB data={underdogSorted} valueKey={getUnderdogStage} color="var(--coral)" showDog={true} />
-
-          {/* Top Predictor */}
-          <div style={{ background:"linear-gradient(135deg,var(--teal),#00A896)", borderRadius:14, padding:"12px 16px", marginBottom:10, marginTop:18, display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:22 }}>🎯</span>
-            <div>
-              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>TOP PREDICTOR</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R1000 prize · predictions + challenges</div>
-            </div>
-          </div>
-          <MiniLB data={predictorSorted} valueKey={predChalPts} color="var(--teal)" />
-        </div> {/* end right column */}
-
-      </div> {/* end main grid */}
     </div>
   );
 }
+
 
 // ─── LEADERBOARD ─────────────────────────────────────────────────
 function Leaderboard({ user, participants }) {
