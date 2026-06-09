@@ -2465,7 +2465,7 @@ export default function App() {
   const [eliteAssign,  setEliteAssign] = useState(null);
 
   const showToast = msg => setToast(msg);
-  const isAdmin   = currentUser === "Brandon";
+  const isAdmin   = currentUser === "Brandon" || currentUser === "Cherine";
 
   // ── LOAD ALL DATA FROM SUPABASE ───────────────────────────────
   useEffect(() => {
