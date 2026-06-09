@@ -2217,26 +2217,42 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
       {/* Bonus */}
       {tab === "bonus" && (
         <div className="fade-in">
-          <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 14 }}>AWARD BONUS POINTS</div>
-          <div className="card aform">
-            <label>Participant</label>
-            <select value={bf.userId} onChange={e => setBf(f => ({ ...f, userId: e.target.value }))}>
-              <option value="">-- Select --</option>
-              {(participants || []).map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-            </select>
-            <label>Points (max 30)</label>
-            <input type="number" min="1" max="30" placeholder="10" value={bf.points} onChange={e => setBf(f => ({ ...f, points: e.target.value }))} />
-            <label>Reason</label>
-            <input placeholder="e.g. Funniest prediction this week 😂" value={bf.reason} onChange={e => setBf(f => ({ ...f, reason: e.target.value }))} />
-            <button className="btn btn-coral" disabled={!bf.userId || !bf.points || !bf.reason} onClick={() => {
-              onAwardBonus(bf.userId, parseInt(bf.points), bf.reason);
-              showToast({ title: "Bonus awarded! 🎁", body: "+" + bf.points + " pts to " + bf.userId });
-              setBf({ userId: "", points: "", reason: "" });
-            }}>🎁 Award Points</button>
+          <div style={{ fontFamily:"var(--fd)", fontSize:22, color:"var(--navy)", marginBottom:8 }}>AWARD BONUS POINTS</div>
+          <div style={{ padding:"11px 16px", background:"rgba(0,191,165,.07)", borderRadius:12, border:"1.5px solid rgba(0,191,165,.2)", fontSize:13, color:"var(--teal)", fontWeight:700, marginBottom:20 }}>
+            Select a category then click a participant to award instantly.
           </div>
+          {[
+            { label:"🏅 Participation",       pts:  30, desc:"Most active this week · completed all games + predictions",    color:"var(--teal)"  },
+            { label:"😴 Least Participation", pts: -10, desc:"Least active this week · missed games or predictions",         color:"#FF6B35"      },
+            { label:"🤦 Worst at the Games",  pts:  -5, desc:"Lowest challenge score this week",                             color:"var(--coral)" },
+            { label:"🔮 Surprise Prediction", pts:  20, desc:"Called an upset nobody else predicted",                        color:"var(--purple)"},
+          ].map(cat => (
+            <div key={cat.label} className="card" style={{ marginBottom:14, borderLeft:"4px solid "+cat.color }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, flexWrap:"wrap", gap:8 }}>
+                <div>
+                  <div style={{ fontWeight:900, fontSize:15, color:"var(--navy)" }}>{cat.label}</div>
+                  <div style={{ fontSize:12, color:"var(--muted)", fontWeight:600, marginTop:2 }}>{cat.desc}</div>
+                </div>
+                <div style={{ fontFamily:"var(--fd)", fontSize:26, color:cat.pts>0?"var(--teal)":"var(--coral)" }}>
+                  {cat.pts>0?"+":""}{cat.pts} pts
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                {(participants||[]).map(p => (
+                  <button key={p.name} className="btn btn-sm"
+                    style={{ background:cat.color+"18", border:"1.5px solid "+cat.color, color:cat.color, fontWeight:800 }}
+                    onClick={() => {
+                      onAwardBonus(p.name, cat.pts, cat.label);
+                      showToast({ title: cat.pts>0?"Bonus awarded! 🎁":"Penalty applied 😬", body:(cat.pts>0?"+":"")+cat.pts+" pts → "+p.name });
+                    }}>
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
-
       {/* Participants */}
       {tab === "participants" && (
         <div className="fade-in">
