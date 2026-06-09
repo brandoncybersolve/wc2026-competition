@@ -2164,37 +2164,22 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
 
 // ─── CALENDAR ────────────────────────────────────────────────────
 function Calendar({ matches }) {
-  const [selected, setSelected] = useState(null);
+  const [selectedWeek, setSelectedWeek] = useState(getCurrentWeek());
 
-  // Tournament: June 11 – July 19 2026
-  // Build every day in that range
-  const tourneyStart = new Date("2026-06-11T00:00:00+02:00");
-  const tourneyEnd   = new Date("2026-07-19T23:59:59+02:00");
-  const allDays = [];
-  const cur = new Date(tourneyStart);
-  while (cur <= tourneyEnd) {
-    allDays.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
+  const WEEKS = [
+    { num:1, label:"Week 1", dates:"Jun 11–17", stage:"Group Stage" },
+    { num:2, label:"Week 2", dates:"Jun 18–24", stage:"Group Stage" },
+    { num:3, label:"Week 3", dates:"Jun 25–27", stage:"Group Stage" },
+    { num:4, label:"Week 4", dates:"Jun 28–Jul 3", stage:"Round of 32" },
+    { num:5, label:"Week 5", dates:"Jul 4–19",  stage:"Knockouts"   },
+  ];
 
-  // Map matches by date key
-  const matchMap = {};
-  (matches || []).forEach(m => {
-    if (!m.kickoff) return;
-    const d   = new Date(m.kickoff);
-    const key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-    if (!matchMap[key]) matchMap[key] = [];
-    matchMap[key].push(m);
-  });
-
-  const today    = new Date();
-  const todayKey = today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0");
-
-  const getKey = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-
-  const fmtTime = (kickoff) => {
-    try { return new Date(kickoff).toLocaleTimeString("en-ZA", { hour:"2-digit", minute:"2-digit", timeZone:"Africa/Johannesburg" }); }
-    catch(e) { return ""; }
+  const WEEK_RANGES = {
+    1: { start:"2026-06-11", end:"2026-06-17" },
+    2: { start:"2026-06-18", end:"2026-06-24" },
+    3: { start:"2026-06-25", end:"2026-06-27" },
+    4: { start:"2026-06-28", end:"2026-07-03" },
+    5: { start:"2026-07-04", end:"2026-07-19" },
   };
 
   const stageColor = (stage) => {
@@ -2208,187 +2193,123 @@ function Calendar({ matches }) {
     return "var(--teal)";
   };
 
-  const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-  // Week label
-  const weekLabel = (weekIdx) => {
-    const labels = ["Week 1 · Group Stage","Week 2 · Group Stage","Week 3 · Group Stage","Week 4 · Round of 32","Week 5 · Knockouts"];
-    return labels[weekIdx] || "Week " + (weekIdx+1);
+  const fmtTime = (kickoff) => {
+    try { return new Date(kickoff).toLocaleTimeString("en-ZA", { hour:"2-digit", minute:"2-digit", timeZone:"Africa/Johannesburg" }); }
+    catch(e) { return ""; }
   };
 
-  // Split allDays into weeks of 7 starting from Jun 11 (Thursday)
-  // Pad start to Monday Jun 8 so the grid aligns properly
-  const padStart = new Date("2026-06-08T00:00:00+02:00"); // Mon
-  const gridDays = [];
-  const gridCur  = new Date(padStart);
-  while (gridCur <= tourneyEnd) {
-    gridDays.push(new Date(gridCur));
-    gridCur.setDate(gridCur.getDate() + 1);
-  }
-  // Pad end to complete last row
-  while (gridDays.length % 7 !== 0) {
-    gridDays.push(new Date(gridCur));
-    gridCur.setDate(gridCur.getDate() + 1);
-  }
+  const fmtDate = (kickoff) => {
+    try { return new Date(kickoff).toLocaleDateString("en-ZA", { weekday:"short", day:"numeric", month:"short", timeZone:"Africa/Johannesburg" }); }
+    catch(e) { return ""; }
+  };
 
-  const weeks = [];
-  for (let i = 0; i < gridDays.length; i += 7) {
-    weeks.push(gridDays.slice(i, i+7));
-  }
+  // Get matches for selected week
+  const range    = WEEK_RANGES[selectedWeek];
+  const start    = new Date(range.start + "T00:00:00+02:00");
+  const end      = new Date(range.end   + "T23:59:59+02:00");
+  const weekMatches = (matches || [])
+    .filter(m => { if (!m.kickoff) return false; const d = new Date(m.kickoff); return d >= start && d <= end; })
+    .sort((a,b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-  const selMatches = selected
-    ? (matchMap[selected] || []).sort((a,b) => new Date(a.kickoff)-new Date(b.kickoff))
-    : [];
-
-  const inTourney = d => d >= tourneyStart && d <= tourneyEnd;
+  const today = new Date();
 
   return (
     <div className="fade-in">
       <div className="phead">
-        <div className="ptitle">📅 MATCH CALENDAR</div>
-        <div className="psub">Jun 11 – Jul 19 2026 · All 5 weeks · Times in SAST · Click a day to see matches</div>
+        <div className="ptitle">📅 MATCH SCHEDULE</div>
+        <div className="psub">All fixtures · Times in SAST · {(matches||[]).length} total matches</div>
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:24, alignItems:"start" }}>
+      {/* Week tabs */}
+      <div style={{ display:"flex", gap:10, marginBottom:24, flexWrap:"wrap" }}>
+        {WEEKS.map(w => (
+          <button key={w.num} onClick={() => setSelectedWeek(w.num)}
+            style={{ padding:"10px 18px", borderRadius:14, border:"2px solid "+(selectedWeek===w.num?"var(--coral)":"var(--border)"), background:selectedWeek===w.num?"var(--coral)":"var(--card)", color:selectedWeek===w.num?"#fff":"var(--muted)", fontWeight:800, fontSize:13, cursor:"pointer", transition:"all .15s", textAlign:"left" }}>
+            <div style={{ fontFamily:"var(--fd)", fontSize:14 }}>{w.label}</div>
+            <div style={{ fontSize:11, opacity:.85, marginTop:2 }}>{w.dates} · {w.stage}</div>
+          </button>
+        ))}
+      </div>
 
-        {/* LEFT — Full tournament calendar */}
-        <div style={{ background:"var(--card)", borderRadius:20, border:"2px solid var(--border)", boxShadow:"var(--sh)", overflow:"hidden" }}>
+      {/* Match count */}
+      <div style={{ fontSize:13, color:"var(--muted)", fontWeight:700, marginBottom:16 }}>
+        {weekMatches.length} match{weekMatches.length!==1?"es":""} · {weekMatches.filter(m=>m.status==="completed").length} completed
+      </div>
 
-          {/* Column headers */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", background:"var(--navy)", borderBottom:"2px solid rgba(255,255,255,.1)" }}>
-            {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
-              <div key={d} style={{ textAlign:"center", padding:"12px 4px", fontWeight:800, fontSize:12, color:"rgba(255,255,255,.6)", letterSpacing:"0.5px" }}>{d}</div>
-            ))}
-          </div>
-
-          {/* Weeks */}
-          {weeks.map((week, wi) => (
-            <div key={wi}>
-              {/* Week label row */}
-              <div style={{ padding:"6px 14px", background:"var(--bg)", borderBottom:"1px solid var(--border)", borderTop: wi>0?"2px solid var(--border)":"none" }}>
-                <span style={{ fontSize:11, fontWeight:800, color:"var(--muted)", textTransform:"uppercase", letterSpacing:"0.8px" }}>{weekLabel(wi)}</span>
-              </div>
-              {/* Day cells */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", borderBottom: wi<weeks.length-1?"2px solid var(--border)":"none" }}>
-                {week.map((day, di) => {
-                  const key      = getKey(day);
-                  const inRange  = inTourney(day);
-                  const dayMatch = matchMap[key] || [];
-                  const isToday  = key === todayKey;
-                  const isSel    = key === selected;
-
-                  return (
-                    <div key={di}
-                      onClick={() => inRange && dayMatch.length > 0 && setSelected(key===selected?null:key)}
-                      style={{
-                        minHeight: 100,
-                        padding: "8px 6px",
-                        borderRight: di<6 ? "1px solid var(--border)" : "none",
-                        background: isSel ? "rgba(255,107,53,.07)" : isToday ? "rgba(255,214,0,.06)" : !inRange ? "rgba(0,0,0,.018)" : "#fff",
-                        cursor: inRange && dayMatch.length>0 ? "pointer" : "default",
-                        transition: "background .15s",
-                        opacity: !inRange ? 0.35 : 1,
-                      }}>
-                      {/* Day number */}
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
-                        <div style={{
-                          width:24, height:24, borderRadius:"50%",
-                          display:"flex", alignItems:"center", justifyContent:"center",
-                          background: isToday?"var(--coral)": isSel?"var(--navy)":"transparent",
-                          color: isToday||isSel?"#fff":"var(--navy)",
-                          fontWeight:800, fontSize:12,
-                        }}>{day.getDate()}</div>
-                        {dayMatch.length>0 && (
-                          <span style={{ background:"var(--coral)", color:"#fff", borderRadius:20, padding:"1px 5px", fontSize:9, fontWeight:800 }}>{dayMatch.length}</span>
-                        )}
-                      </div>
-                      {/* Match pills */}
-                      {dayMatch.sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff)).slice(0,4).map(m => {
-                        const h = getTeam(m.home), a = getTeam(m.away);
-                        const col = stageColor(m.stage);
-                        const time = fmtTime(m.kickoff);
-                        return (
-                          <div key={m.id} style={{ marginBottom:3, padding:"2px 4px", borderRadius:5, background:col+"15", borderLeft:"3px solid "+col }}>
-                            <div style={{ fontSize:8, color:col, fontWeight:800, marginBottom:1 }}>{time}</div>
-                            <div style={{ display:"flex", alignItems:"center", gap:2 }}>
-                              <Flag code={h.id} size={10} style={{ borderRadius:2, flexShrink:0 }} />
-                              <span style={{ fontSize:8, fontWeight:800, color:"var(--navy)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{h.name}</span>
-                            </div>
-                            <div style={{ display:"flex", alignItems:"center", gap:2 }}>
-                              <Flag code={a.id} size={10} style={{ borderRadius:2, flexShrink:0 }} />
-                              <span style={{ fontSize:8, fontWeight:800, color:"var(--navy)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.name}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {dayMatch.length>4 && <div style={{ fontSize:8, color:"var(--muted)", fontWeight:800 }}>+{dayMatch.length-4} more</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+      {/* Table */}
+      <div className="card" style={{ padding:0, overflow:"hidden" }}>
+        {/* Table header */}
+        <div style={{ display:"grid", gridTemplateColumns:"110px 1fr 80px 80px 1fr 110px 90px", background:"var(--navy)", padding:"12px 20px", gap:8 }}>
+          {["Date","Home Team","","Score","Away Team","Stage","Time (SAST)"].map((h,i) => (
+            <div key={i} style={{ fontSize:11, fontWeight:800, color:"rgba(255,255,255,.6)", textTransform:"uppercase", letterSpacing:"0.6px", textAlign: i===2||i===3?"center": i===4||i===5?"right":"left" }}>{h}</div>
           ))}
         </div>
 
-        {/* RIGHT — Selected day detail */}
-        <div style={{ position:"sticky", top:24 }}>
-          {!selected ? (
-            <div className="card" style={{ textAlign:"center", padding:"40px 20px" }}>
-              <div style={{ fontSize:48, marginBottom:12 }}>👆</div>
-              <div style={{ fontWeight:800, color:"var(--navy)", fontSize:15, marginBottom:8 }}>Click a day</div>
-              <div style={{ color:"var(--muted)", fontSize:13, fontWeight:600 }}>Select any highlighted date to see full match details</div>
-            </div>
-          ) : (
-            <div>
-              <div style={{ fontFamily:"var(--fd)", fontSize:18, color:"var(--navy)", marginBottom:14 }}>
-                {new Date(selected+"T12:00:00").toLocaleDateString("en-ZA", { weekday:"long", day:"numeric", month:"long" })}
-                <span style={{ fontSize:13, color:"var(--muted)", fontWeight:700, marginLeft:8 }}>{selMatches.length} match{selMatches.length!==1?"es":""}</span>
-              </div>
-              {selMatches.map(m => {
-                const h    = getTeam(m.home);
-                const a    = getTeam(m.away);
-                const done = m.status === "completed";
-                const col  = stageColor(m.stage);
-                return (
-                  <div key={m.id} className="card" style={{ marginBottom:12, borderTop:"4px solid "+col, padding:"16px" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                      <span style={{ fontSize:11, fontWeight:800, color:col, background:col+"18", borderRadius:20, padding:"3px 10px" }}>{m.stage}</span>
-                      <span style={{ fontSize:12, color:"var(--muted)", fontWeight:700 }}>🕐 {fmtTime(m.kickoff)} SAST</span>
-                    </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <div style={{ flex:1, textAlign:"center" }}>
-                        <Flag code={h.id} size={32} style={{ margin:"0 auto 5px", display:"block" }} />
-                        <div style={{ fontSize:12, fontWeight:800 }}>{h.name}</div>
-                      </div>
-                      <div style={{ textAlign:"center", minWidth:44 }}>
-                        {done
-                          ? <div style={{ fontFamily:"var(--fd)", fontSize:24, color:"var(--coral)" }}>{m.homeScore}–{m.awayScore}</div>
-                          : <div style={{ fontFamily:"var(--fd)", fontSize:16, color:"var(--muted)" }}>VS</div>
-                        }
-                        {done && <span className="badge bg-g" style={{ fontSize:9 }}>FT</span>}
-                      </div>
-                      <div style={{ flex:1, textAlign:"center" }}>
-                        <Flag code={a.id} size={32} style={{ margin:"0 auto 5px", display:"block" }} />
-                        <div style={{ fontSize:12, fontWeight:800 }}>{a.name}</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Legend */}
-          <div className="card" style={{ marginTop:16, padding:"14px 16px" }}>
-            <div style={{ fontWeight:800, fontSize:11, color:"var(--muted)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:10 }}>Stage Colours</div>
-            {[["Group Stage","#7C4DFF"],["Round of 32","var(--coral)"],["Round of 16","#FF6B35"],["Quarter Final","#E91E8C"],["Semi Final","#FFB300"],["Final","#FFD600"]].map(([s,c]) => (
-              <div key={s} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                <div style={{ width:10, height:10, borderRadius:3, background:c, flexShrink:0 }} />
-                <span style={{ fontSize:12, fontWeight:700, color:"var(--navy)" }}>{s}</span>
-              </div>
-            ))}
+        {/* Rows */}
+        {weekMatches.length === 0 ? (
+          <div style={{ textAlign:"center", padding:"48px 20px", color:"var(--muted)", fontWeight:700 }}>
+            <div style={{ fontSize:36, marginBottom:12 }}>🗓️</div>
+            No matches scheduled for this week yet
           </div>
-        </div>
+        ) : weekMatches.map((m, i) => {
+          const h    = getTeam(m.home);
+          const a    = getTeam(m.away);
+          const done = m.status === "completed";
+          const ko   = new Date(m.kickoff);
+          const isNow = !done && ko <= today && today <= new Date(ko.getTime() + 2*60*60*1000);
+          const col  = stageColor(m.stage);
+
+          return (
+            <div key={m.id} style={{ display:"grid", gridTemplateColumns:"110px 1fr 80px 80px 1fr 110px 90px", padding:"14px 20px", gap:8, alignItems:"center", borderTop: i>0?"1px solid var(--border)":"none", background: isNow?"rgba(255,214,0,.04)": done?"rgba(0,191,165,.02)":"#fff", borderLeft: isNow?"4px solid var(--yellow)": done?"4px solid var(--teal)":"4px solid transparent" }}>
+              
+              {/* Date */}
+              <div style={{ fontSize:12, fontWeight:800, color:"var(--muted)" }}>{fmtDate(m.kickoff)}</div>
+
+              {/* Home team */}
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <Flag code={h.id} size={22} />
+                <span style={{ fontSize:13, fontWeight:800, color:"var(--navy)" }}>{h.name}</span>
+              </div>
+
+              {/* Home score */}
+              <div style={{ textAlign:"center", fontFamily:"var(--fd)", fontSize:18, color: done?"var(--coral)":"var(--border)" }}>
+                {done ? m.homeScore : "–"}
+              </div>
+
+              {/* Away score */}
+              <div style={{ textAlign:"center", fontFamily:"var(--fd)", fontSize:18, color: done?"var(--coral)":"var(--border)" }}>
+                {done ? m.awayScore : "–"}
+              </div>
+
+              {/* Away team */}
+              <div style={{ display:"flex", alignItems:"center", gap:8, justifyContent:"flex-end" }}>
+                <span style={{ fontSize:13, fontWeight:800, color:"var(--navy)" }}>{a.name}</span>
+                <Flag code={a.id} size={22} />
+              </div>
+
+              {/* Stage */}
+              <div style={{ textAlign:"right" }}>
+                <span style={{ fontSize:10, fontWeight:800, color:col, background:col+"18", borderRadius:20, padding:"3px 8px" }}>{m.stage}</span>
+              </div>
+
+              {/* Time */}
+              <div style={{ fontSize:12, fontWeight:800, color:"var(--muted)", textAlign:"right" }}>
+                {isNow ? <span style={{ color:"var(--yellow)", fontWeight:900 }}>🔴 LIVE</span> : fmtTime(m.kickoff)}
+              </div>
+
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display:"flex", gap:16, marginTop:16, flexWrap:"wrap" }}>
+        {[["Group Stage","#7C4DFF"],["Round of 32","var(--coral)"],["Round of 16","#FF6B35"],["Quarter Final","#E91E8C"],["Semi Final","#FFB300"],["Final","#FFD600"]].map(([s,c]) => (
+          <div key={s} style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <div style={{ width:10, height:10, borderRadius:3, background:c }} />
+            <span style={{ fontSize:12, fontWeight:700, color:"var(--muted)" }}>{s}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
