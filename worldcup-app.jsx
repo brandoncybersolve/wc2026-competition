@@ -890,6 +890,49 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
   const gap     = (leader.teamPts + leader.predPts + leader.challengePts + leader.bonusPts) - myTotal;
   const openMatches = (matches || []).filter(m => m.status === "open").length;
 
+  // Stage points for underdog ranking
+  const STAGE_ORDER = ["Group Stage","Round of 32","Round of 16","Quarter Final","Semi Final","Final","Champion"];
+
+  const getUnderdogStage = (p) => {
+    const dog = (p.portfolio || []).find(pt => pt.slot === "underdog");
+    if (!dog) return -1;
+    return dog.stage ? STAGE_ORDER.indexOf(dog.stage) : 0;
+  };
+
+  const predChalPts = (p) => (p.predPts || 0) + (p.challengePts || 0);
+
+  const overallSorted    = [...(participants||[])].sort((a,b) => (b.teamPts+b.predPts+b.challengePts+b.bonusPts) - (a.teamPts+a.predPts+a.challengePts+a.bonusPts));
+  const underdogSorted   = [...(participants||[])].filter(p => (p.portfolio||[]).find(pt=>pt.slot==="underdog")).sort((a,b) => getUnderdogStage(b) - getUnderdogStage(a));
+  const predictorSorted  = [...(participants||[])].sort((a,b) => predChalPts(b) - predChalPts(a));
+
+  const MiniLB = ({ data, valueKey, color, showDog }) => (
+    <div className="card" style={{ marginBottom: 0 }}>
+      {(data||[]).length === 0 && <div style={{ fontSize:12, color:"var(--muted)", fontWeight:700, padding:"8px 0" }}>No data yet</div>}
+      {(data||[]).map((p,i) => {
+        const medals = ["🥇","🥈","🥉","4️⃣","5️⃣"];
+        const isMe   = p.name === user;
+        const val    = valueKey(p);
+        const dog    = (p.portfolio||[]).find(pt=>pt.slot==="underdog");
+        return (
+          <div key={p.name} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 10px", borderRadius:12, marginBottom:6, background: isMe ? "rgba(255,107,53,.06)" : "var(--bg)", border: isMe ? "1.5px solid var(--coral)" : "1.5px solid transparent" }}>
+            <div style={{ fontFamily:"var(--fd)", fontSize:i<3?16:12, width:24, textAlign:"center" }}>{i<3?medals[i]:i+1}</div>
+            <Avatar name={p.name} size={26} />
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:800, fontSize:12, color:"var(--navy)" }}>{p.name}{isMe?" (you)":""}</div>
+              {showDog && dog && (
+                <div style={{ display:"flex", alignItems:"center", gap:4, marginTop:2 }}>
+                  <Flag code={dog.team} size={12} />
+                  <span style={{ fontSize:10, color:"var(--muted)", fontWeight:700 }}>{getTeam(dog.team).name} · {dog.stage||"Group Stage"}</span>
+                </div>
+              )}
+            </div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:16, color }}>{typeof val === "number" && val >= 0 ? val : ""}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="fade-in">
       <div className="phead">
@@ -901,6 +944,45 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
           <span className="badge bc pulse">🔴 LIVE</span>
         </div>
       </div>
+
+      {/* Main layout — Left: Prize Leaderboards | Right: Dashboard content */}
+      <div style={{ display:"grid", gridTemplateColumns:"320px 1fr", gap:24, alignItems:"start" }}>
+
+        {/* LEFT — 3 Prize Leaderboards */}
+        <div>
+          {/* Overall Winner */}
+          <div style={{ background:"linear-gradient(135deg,#FFD600,#FFB300)", borderRadius:14, padding:"12px 16px", marginBottom:10, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:22 }}>🏆</span>
+            <div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>OVERALL WINNER</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R500 prize · highest total points</div>
+            </div>
+          </div>
+          <MiniLB data={overallSorted} valueKey={p=>(p.teamPts+p.predPts+p.challengePts+p.bonusPts)} color="var(--coral)" />
+
+          {/* Underdog Glory */}
+          <div style={{ background:"linear-gradient(135deg,var(--coral),#FF8C5A)", borderRadius:14, padding:"12px 16px", marginBottom:10, marginTop:18, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:22 }}>🐶</span>
+            <div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>UNDERDOG GLORY</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R500 prize · reach the QF</div>
+            </div>
+          </div>
+          <MiniLB data={underdogSorted} valueKey={getUnderdogStage} color="var(--coral)" showDog={true} />
+
+          {/* Top Predictor */}
+          <div style={{ background:"linear-gradient(135deg,var(--teal),#00A896)", borderRadius:14, padding:"12px 16px", marginBottom:10, marginTop:18, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:22 }}>🎯</span>
+            <div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>TOP PREDICTOR</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R1000 prize · predictions + challenges</div>
+            </div>
+          </div>
+          <MiniLB data={predictorSorted} valueKey={predChalPts} color="var(--teal)" />
+        </div>
+
+        {/* RIGHT — existing dashboard content */}
+        <div>
 
       {/* Hero */}
       <div style={{ background: "linear-gradient(135deg,var(--navy) 0%,#2D2F7A 100%)", borderRadius: 24, padding: "26px 30px", marginBottom: 20, boxShadow: "0 12px 40px rgba(26,27,75,.25)", color: "#fff", position: "relative", overflow: "hidden" }}>
@@ -994,6 +1076,8 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
           </div>
         </div>
       )}
+    </div> {/* end right column */}
+      </div> {/* end main grid */}
     </div>
   );
 }
