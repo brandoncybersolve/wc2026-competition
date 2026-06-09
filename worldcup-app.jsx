@@ -945,43 +945,10 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
         </div>
       </div>
 
-      {/* Main layout — Left: Prize Leaderboards | Right: Dashboard content */}
-      <div style={{ display:"grid", gridTemplateColumns:"320px 1fr", gap:24, alignItems:"start" }}>
+      {/* Main 2-col layout */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 360px", gap:24, alignItems:"start" }}>
 
-        {/* LEFT — 3 Prize Leaderboards */}
-        <div>
-          {/* Overall Winner */}
-          <div style={{ background:"linear-gradient(135deg,#FFD600,#FFB300)", borderRadius:14, padding:"12px 16px", marginBottom:10, display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:22 }}>🏆</span>
-            <div>
-              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>OVERALL WINNER</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R500 prize · highest total points</div>
-            </div>
-          </div>
-          <MiniLB data={overallSorted} valueKey={p=>(p.teamPts+p.predPts+p.challengePts+p.bonusPts)} color="var(--coral)" />
-
-          {/* Underdog Glory */}
-          <div style={{ background:"linear-gradient(135deg,var(--coral),#FF8C5A)", borderRadius:14, padding:"12px 16px", marginBottom:10, marginTop:18, display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:22 }}>🐶</span>
-            <div>
-              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>UNDERDOG GLORY</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R500 prize · reach the QF</div>
-            </div>
-          </div>
-          <MiniLB data={underdogSorted} valueKey={getUnderdogStage} color="var(--coral)" showDog={true} />
-
-          {/* Top Predictor */}
-          <div style={{ background:"linear-gradient(135deg,var(--teal),#00A896)", borderRadius:14, padding:"12px 16px", marginBottom:10, marginTop:18, display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:22 }}>🎯</span>
-            <div>
-              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>TOP PREDICTOR</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R1000 prize · predictions + challenges</div>
-            </div>
-          </div>
-          <MiniLB data={predictorSorted} valueKey={predChalPts} color="var(--teal)" />
-        </div>
-
-        {/* RIGHT — existing dashboard content */}
+        {/* LEFT — Hero + Challenge + Live Standings + My Teams */}
         <div>
 
       {/* Hero */}
@@ -1076,7 +1043,41 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
           </div>
         </div>
       )}
-    </div> {/* end right column */}
+        </div> {/* end left column */}
+
+        {/* RIGHT — 3 Prize Leaderboards */}
+        <div>
+          {/* Overall Winner */}
+          <div style={{ background:"linear-gradient(135deg,#FFD600,#FFB300)", borderRadius:14, padding:"12px 16px", marginBottom:10, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:22 }}>🏆</span>
+            <div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>OVERALL WINNER</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R500 prize · highest total points</div>
+            </div>
+          </div>
+          <MiniLB data={overallSorted} valueKey={p=>(p.teamPts+p.predPts+p.challengePts+p.bonusPts)} color="var(--coral)" />
+
+          {/* Underdog Glory */}
+          <div style={{ background:"linear-gradient(135deg,var(--coral),#FF8C5A)", borderRadius:14, padding:"12px 16px", marginBottom:10, marginTop:18, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:22 }}>🐶</span>
+            <div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>UNDERDOG GLORY</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R500 prize · reach the QF</div>
+            </div>
+          </div>
+          <MiniLB data={underdogSorted} valueKey={getUnderdogStage} color="var(--coral)" showDog={true} />
+
+          {/* Top Predictor */}
+          <div style={{ background:"linear-gradient(135deg,var(--teal),#00A896)", borderRadius:14, padding:"12px 16px", marginBottom:10, marginTop:18, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:22 }}>🎯</span>
+            <div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:14, color:"#fff", lineHeight:1.2 }}>TOP PREDICTOR</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:700 }}>R1000 prize · predictions + challenges</div>
+            </div>
+          </div>
+          <MiniLB data={predictorSorted} valueKey={predChalPts} color="var(--teal)" />
+        </div> {/* end right column */}
+
       </div> {/* end main grid */}
     </div>
   );
