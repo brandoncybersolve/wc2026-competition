@@ -985,7 +985,7 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
 
         {/* Col 3 — Top Predictor */}
         <PrizeLB
-          title="TOP PREDICTOR" icon="🎯" prize="R1000 · predictions + challenges"
+          title="POINTS" icon="🎯" prize="R1000 · predictions + challenges"
           data={predictorSorted} getValue={predChalPts}
           color="var(--teal)"
         />
@@ -1007,9 +1007,9 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
           <button className="btn btn-coral" onClick={() => setPage("challenge")}>Start Challenge →</button>
         </div>
 
-        {/* Live Standings */}
+        {/* Live Leaderboard */}
         <div className="card">
-          <div className="ctitle" style={{ marginBottom:12 }}>📊 Live Standings</div>
+          <div className="ctitle" style={{ marginBottom:12 }}>📊 Live Leaderboard</div>
           {sorted.map((p,i) => {
             const medals = ["🥇","🥈","🥉"];
             const isMe   = p.name === user;
