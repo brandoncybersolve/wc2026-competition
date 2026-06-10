@@ -1262,6 +1262,27 @@ function Predictions({ user, matches, predictions, onSavePrediction, showToast }
     for (const matchId of keys) {
       await onSavePrediction(matchId, sel[matchId]);
     }
+    // Send ONE Chat message covering all predictions locked this session
+    if (keys.length > 0) {
+      const week = getCurrentWeek();
+      const outcomes = keys.map(matchId => {
+        const m = (matches||[]).find(m => m.id === matchId);
+        if (!m) return null;
+        const h = getTeam(m.home);
+        const a = getTeam(m.away);
+        const o = sel[matchId];
+        const label = o === "home" ? h.name : o === "away" ? a.name : "Draw";
+        return h.name + " vs " + a.name + " → *" + label + "*";
+      }).filter(Boolean);
+      sendChat(
+        "🎯 *" + user + " locked in " + keys.length + " prediction" + (keys.length !== 1 ? "s" : "") + " for Week " + week + "!*
+" +
+        outcomes.slice(0, 5).join("
+") +
+        (outcomes.length > 5 ? "
+_...and " + (outcomes.length - 5) + " more_" : "")
+      );
+    }
     setSel({});
     showToast({ title: "Predictions locked! 🎯", body: keys.length + " prediction" + (keys.length !== 1 ? "s" : "") + " saved" });
   };
