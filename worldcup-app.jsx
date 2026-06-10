@@ -1653,7 +1653,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   const answerT = (idx) => {
     if (answered !== null) return;
     setAnswered(idx);
-    if (idx === trivia[qIdx].ans) setScore(s => s + 4);
+    if (idx === trivia[qIdx].ans) setScore(s => s + 3);
     setTimeout(() => {
       if (qIdx + 1 < trivia.length) { setQIdx(i => i + 1); setAnswered(null); }
       else setPhase("trivia-result");
@@ -1692,7 +1692,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
       <div className="score-big">{score}</div>
       <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>POINTS EARNED</div>
       <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-        <button className="btn btn-coral" onClick={() => claim("trivia", score, "Trivia Blitz 🧠")}>Claim Points</button>
+        <button className="btn btn-coral" onClick={() => claim("trivia", Math.min(score, 15), "Trivia Blitz 🧠")}>Claim Points</button>
         <button className="btn btn-outline" onClick={() => { setPhase("trivia"); setQIdx(0); setScore(0); setAnswered(null); }}>Try Again</button>
       </div>
     </div>
@@ -1744,7 +1744,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
       <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{fScore} / 15 points</div>
       <div className="score-big">{fScore}</div>
       <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>POINTS EARNED</div>
-      <button className="btn btn-coral" onClick={() => claim("flags", fScore, "Flag Frenzy 🌍")}>Claim Points</button>
+      <button className="btn btn-coral" onClick={() => claim("flags", Math.min(fScore, 15), "Flag Frenzy 🌍")}>Claim Points</button>
     </div>
   );
 
@@ -1863,7 +1863,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
       <div style={{ color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>{hotScore / 2}/{hotStatements.length} matched the crowd</div>
       <div className="score-big">{hotScore}</div>
       <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, marginBottom: 24 }}>POINTS EARNED</div>
-      <button className="btn btn-coral" onClick={() => claim("hot", hotScore, "Hot or Not 🔥")}>Claim Points</button>
+      <button className="btn btn-coral" onClick={() => claim("hot", Math.min(Math.round(hotScore), 15), "Hot or Not 🔥")}>Claim Points</button>
     </div>
   );
 
