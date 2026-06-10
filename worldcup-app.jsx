@@ -1274,14 +1274,8 @@ function Predictions({ user, matches, predictions, onSavePrediction, showToast }
         const label = o === "home" ? h.name : o === "away" ? a.name : "Draw";
         return h.name + " vs " + a.name + " → *" + label + "*";
       }).filter(Boolean);
-      sendChat(
-        "🎯 *" + user + " locked in " + keys.length + " prediction" + (keys.length !== 1 ? "s" : "") + " for Week " + week + "!*
-" +
-        outcomes.slice(0, 5).join("
-") +
-        (outcomes.length > 5 ? "
-_...and " + (outcomes.length - 5) + " more_" : "")
-      );
+      var chatMsg = "🎯 *" + user + " locked in " + keys.length + " prediction" + (keys.length !== 1 ? "s" : "") + " for Week " + week + "!*\n" + outcomes.slice(0, 5).join("\n") + (outcomes.length > 5 ? "\n_...and " + (outcomes.length - 5) + " more_" : "");
+      sendChat(chatMsg);
     }
     setSel({});
     showToast({ title: "Predictions locked! 🎯", body: keys.length + " prediction" + (keys.length !== 1 ? "s" : "") + " saved" });
