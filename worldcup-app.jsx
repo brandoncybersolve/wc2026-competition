@@ -578,7 +578,7 @@ function HowToPlay({ onDone }) {
     { icon: "🥊", title: "2 Contenders (2×)", desc: "You pick 2 teams from ranks 6–15. First come first served — each team can only be picked once." },
     { icon: "🐶", title: "1 Underdog (5×)", desc: "Pick any team ranked 16+. Highest multiplier — if they go on a run you could top the leaderboard!" },
     { icon: "🎯", title: "Predictions", desc: "Predict Home Win / Draw / Away Win for each match. Correct = 20 pts. Predictions lock at kick-off." },
-    { icon: "🎮", title: "Weekly Challenges", desc: "3 challenges per week — Trivia, Flags, Hot or Not and more. Up to 55 pts per week. Once done, locked." },
+    { icon: "🎮", title: "Weekly Challenges", desc: "4 challenges per week — Trivia, Flag Frenzy, Hot or Not and Memory Match. 15 pts each = 60 pts per week. Once done, locked." },
     { icon: "🏆", title: "Points & Stages", desc: "Group Stage = 10pts, R32 = 15pts, R16 = 25pts, QF = 40pts, SF = 60pts, Final = 120pts. All × your multiplier." },
   ];
   return (
