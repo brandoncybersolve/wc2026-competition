@@ -387,12 +387,10 @@ const WEEK_SCHEDULE = {
 };
 
 const CHALLENGE_INFO = {
-  trivia:    { icon: "🧠", title: "Trivia Blitz",     desc: "5 questions · 15 pts · ~45 secs",  pts: 15 },
-  flags:     { icon: "🌍", title: "Flag Frenzy",      desc: "5 flags · 15 pts · ~30 secs",      pts: 15 },
-  hot:       { icon: "🔥", title: "Hot or Not",       desc: "10 football takes · 15 pts · ~30 secs", pts: 15 },
-  lightning: { icon: "⚡", title: "Lightning Round",  desc: "10 true/false · 15 pts · 30 secs", pts: 15 },
-  score:     { icon: "🎯", title: "Score Predictor",  desc: "Predict exact score · 15 pts",     pts: 15 },
-  memory:    { icon: "🧩", title: "Memory Match",      desc: "Match 6 flag pairs · 15 pts",      pts: 15 },
+  trivia:  { icon: "🧠", title: "Trivia Blitz",  desc: "5 football questions · 15 pts · ~45 secs",    pts: 15 },
+  flags:   { icon: "🌍", title: "Flag Frenzy",   desc: "Match 5 flags to their country · 15 pts",     pts: 15 },
+  hot:     { icon: "🔥", title: "Hot or Not",    desc: "10 football takes · agree or disagree · 15 pts", pts: 15 },
+  memory:  { icon: "🧩", title: "Memory Match",  desc: "Match 6 flag pairs · 15 pts",                 pts: 15 },
 };
 
 function getCurrentWeek() {
