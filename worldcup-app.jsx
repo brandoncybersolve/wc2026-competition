@@ -2762,6 +2762,17 @@ export default function App() {
     ...(isAdmin ? [{ id: "admin", icon: "⚙️", label: "Admin" }] : []),
   ];
 
+  // Show How To Play FIRST on every new device/browser before anything else
+  if (showHowTo) return (
+    <React.Fragment>
+      <style>{CSS}</style>
+      <HowToPlay onDone={() => {
+        try { localStorage.setItem("wc2026_howto_seen", "1"); } catch(e) {}
+        setShowHowTo(false);
+      }} />
+    </React.Fragment>
+  );
+
   if (loading) return (
     <React.Fragment>
       <style>{CSS}</style>
@@ -2776,15 +2787,7 @@ export default function App() {
     </React.Fragment>
   );
 
-  if (!currentUser && showHowTo) return (
-    <React.Fragment>
-      <style>{CSS}</style>
-      <HowToPlay onDone={() => {
-        try { localStorage.setItem("wc2026_howto_seen", "1"); } catch(e) {}
-        setShowHowTo(false);
-      }} />
-    </React.Fragment>
-  );
+  // HowToPlay handled above before loading screen
 
   if (!currentUser) return (
     <React.Fragment>
