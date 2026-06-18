@@ -2064,8 +2064,44 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
   const [rf,  setRf]  = useState({ matchId: "", home: "", away: "" });
   const [bf,  setBf]  = useState({ userId: "", points: "", reason: "" });
   const [af,  setAf]  = useState({ teamId: "", stage: "" });
+  const [allPreds,  setAllPreds]  = useState([]);
+  const [allComps,  setAllComps]  = useState([]);
+  const [predsLoaded, setPredsLoaded] = useState(false);
   const sorted = [...(participants || [])].sort((a, b) => (b.teamPts + b.predPts + b.challengePts + b.bonusPts) - (a.teamPts + a.predPts + a.challengePts + a.bonusPts));
   const openMatches = (matches || []).filter(m => m.status === "open");
+
+  useEffect(() => {
+    (async () => {
+      const [preds, comps] = await Promise.all([
+        sbGet("predictions"),
+        sbGet("challenge_completions"),
+      ]);
+      setAllPreds(preds || []);
+      setAllComps(comps || []);
+      setPredsLoaded(true);
+    })();
+  }, []);
+
+  const currentWk = getCurrentWeek();
+  const weekMatchIds = (matches || []).filter(m => {
+    const wk = getMatchWeek ? getMatchWeek(m) : currentWk;
+    return wk === currentWk;
+  }).map(m => m.id);
+
+  // Participation stats per person for the current week
+  const participationStats = (participants || []).map(p => {
+    const uid = p.name.toLowerCase();
+    const predsThisWeek = allPreds.filter(pr => pr.user_id === uid && weekMatchIds.includes(pr.match_id)).length;
+    const compsThisWeek = allComps.filter(c => c.user_id === uid && c.week === currentWk).length;
+    return {
+      name: p.name,
+      predsCount: predsThisWeek,
+      predsTotal: weekMatchIds.length,
+      compsCount: compsThisWeek,
+      compsTotal: 4,
+      score: predsThisWeek + compsThisWeek, // simple combined activity score
+    };
+  }).sort((a, b) => b.score - a.score);
 
   return (
     <div className="fade-in">
@@ -2180,14 +2216,36 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
           )}
           {(matches || []).filter(m => m.status === "completed").map(m => {
             const h = getTeam(m.home), a = getTeam(m.away);
+            const actualOutcome = m.homeScore > m.awayScore ? "home" : m.awayScore > m.homeScore ? "away" : "draw";
+            const matchPreds = allPreds.filter(pr => pr.match_id === m.id);
+            const correctPreds = matchPreds.filter(pr => pr.outcome === actualOutcome);
+            const isSurprise = correctPreds.length === 1 && matchPreds.length > 1; // exactly one person got it right
             return (
-              <div key={m.id} className="card" style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <Flag code={h.id} size={22} />
-                <span style={{ fontWeight: 800 }}>{h.name}</span>
-                <span style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--coral)", margin: "0 6px" }}>{m.homeScore}–{m.awayScore}</span>
-                <span style={{ fontWeight: 800 }}>{a.name}</span>
-                <Flag code={a.id} size={22} />
-                <div style={{ marginLeft: "auto" }}><span className="badge bg-g">✓ Scored</span></div>
+              <div key={m.id} className="card" style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <Flag code={h.id} size={22} />
+                  <span style={{ fontWeight: 800 }}>{h.name}</span>
+                  <span style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--coral)", margin: "0 6px" }}>{m.homeScore}–{m.awayScore}</span>
+                  <span style={{ fontWeight: 800 }}>{a.name}</span>
+                  <Flag code={a.id} size={22} />
+                  <div style={{ marginLeft: "auto", display:"flex", gap:6 }}>
+                    {isSurprise && <span className="badge" style={{ background:"rgba(124,77,255,.12)", color:"var(--purple)", border:"1.5px solid rgba(124,77,255,.3)" }}>🔮 Surprise pick!</span>}
+                    <span className="badge bg-g">✓ Scored</span>
+                  </div>
+                </div>
+                {matchPreds.length > 0 && (
+                  <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)", display:"flex", flexWrap:"wrap", gap:8 }}>
+                    {matchPreds.map(pr => {
+                      const correct = pr.outcome === actualOutcome;
+                      const label = pr.outcome === "home" ? h.name : pr.outcome === "away" ? a.name : "Draw";
+                      return (
+                        <span key={pr.user_id} style={{ fontSize:11, fontWeight:800, padding:"4px 10px", borderRadius:20, background: correct?"rgba(0,191,165,.1)":"rgba(0,0,0,.04)", color: correct?"var(--teal)":"var(--muted)" }}>
+                          {correct?"✓ ":""}{pr.user_id} → {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -2270,6 +2328,35 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
       {/* Participants */}
       {tab === "participants" && (
         <div className="fade-in">
+          <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 8 }}>WEEK {currentWk} PARTICIPATION TRACKER</div>
+          <div style={{ padding:"11px 16px", background:"rgba(124,77,255,.07)", borderRadius:12, border:"1.5px solid rgba(124,77,255,.2)", fontSize:13, color:"var(--purple)", fontWeight:700, marginBottom:16 }}>
+            Use this to objectively decide Participation (+30) and Least Participation (-10) bonus awards — based on actual predictions made and challenges completed this week, not guesswork.
+          </div>
+          {!predsLoaded ? (
+            <div className="card" style={{ textAlign:"center", padding:30, color:"var(--muted)", fontWeight:700 }}>Loading activity data...</div>
+          ) : (
+            <div className="card" style={{ marginBottom:24, padding:0, overflow:"hidden" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1.2fr 1fr 1fr 1fr", background:"var(--navy)", padding:"10px 16px", gap:8 }}>
+                {["Person","Predictions","Challenges","Activity Score"].map((h,i) => (
+                  <div key={i} style={{ fontSize:11, fontWeight:800, color:"rgba(255,255,255,.6)", textTransform:"uppercase", letterSpacing:"0.5px", textAlign: i===0?"left":"center" }}>{h}</div>
+                ))}
+              </div>
+              {participationStats.map((s, i) => (
+                <div key={s.name} style={{ display:"grid", gridTemplateColumns:"1.2fr 1fr 1fr 1fr", padding:"12px 16px", gap:8, alignItems:"center", borderTop: i>0?"1px solid var(--border)":"none", background: i===0?"rgba(0,191,165,.04)": i===participationStats.length-1?"rgba(255,107,53,.04)":"#fff" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <Avatar name={s.name} size={28} />
+                    <span style={{ fontWeight:800, fontSize:13, color:"var(--navy)" }}>{s.name}</span>
+                    {i===0 && <span className="badge bg-g" style={{ fontSize:10 }}>Most Active</span>}
+                    {i===participationStats.length-1 && participationStats.length>1 && <span className="badge bg-r" style={{ fontSize:10 }}>Least Active</span>}
+                  </div>
+                  <div style={{ textAlign:"center", fontWeight:800, color:"var(--navy)" }}>{s.predsCount}/{s.predsTotal}</div>
+                  <div style={{ textAlign:"center", fontWeight:800, color:"var(--navy)" }}>{s.compsCount}/{s.compsTotal}</div>
+                  <div style={{ textAlign:"center", fontFamily:"var(--fd)", fontSize:18, color:"var(--coral)" }}>{s.score}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 14 }}>PARTICIPANT STATUS</div>
           {sorted.map(p => {
             const total = p.teamPts + p.predPts + p.challengePts + p.bonusPts;
