@@ -1285,10 +1285,11 @@ function Predictions({ user, matches, predictions, onSavePrediction, showToast }
     const h      = getTeam(m.home);
     const a      = getTeam(m.away);
     const alreadySaved = !!(myPreds[m.id] && myPreds[m.id].outcome);
-    const locked = m.status === "locked" || alreadySaved; // locked once saved OR at kickoff
+    const ko     = m.kickoff ? new Date(m.kickoff) : null;
+    const kickoffPassed = ko ? new Date() >= ko : false;
+    const locked = m.status === "locked" || alreadySaved || kickoffPassed; // locked once saved, at kickoff, or time has passed
     const myPick = alreadySaved ? myPreds[m.id].outcome : sel[m.id];
     const saved  = alreadySaved;
-    const ko     = m.kickoff ? new Date(m.kickoff) : null;
     const time   = ko
       ? ko.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Johannesburg" }) + " SAST"
       : m.date;
@@ -2598,23 +2599,12 @@ export default function App() {
   }, [currentUser]);
 
   // ── AUTO-LOCK PREDICTIONS AT KICK-OFF ────────────────────────
-  const warnedRef = useRef(new Set());
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
       setMatches(prev => prev.map(m => {
         if (!m.kickoff || m.status !== "open") return m;
-        const ko   = new Date(m.kickoff);
-        const mins = Math.round((ko - now) / 60000);
-        const h    = getTeam(m.home), a = getTeam(m.away);
-        if (mins === 60 && !warnedRef.current.has(m.id + "_60")) {
-          warnedRef.current.add(m.id + "_60");
-          sendChat("⏰ *Prediction deadline in 60 minutes!*\n*" + h.name + " vs " + a.name + "* — lock in your pick now!");
-        }
-        if (mins === 15 && !warnedRef.current.has(m.id + "_15")) {
-          warnedRef.current.add(m.id + "_15");
-          sendChat("⏰ *FINAL 15 MINUTES!*\n*" + h.name + " vs " + a.name + "* kicks off soon — last chance! 🔒");
-        }
+        const ko = new Date(m.kickoff);
         if (now >= ko) return { ...m, status: "locked" };
         return m;
       }));
