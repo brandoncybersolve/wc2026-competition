@@ -2083,23 +2083,25 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
   }, []);
 
   const currentWk = getCurrentWeek();
-  const weekMatchIds = (matches || []).filter(m => {
+  // Count matches that have already opened up to this week (overall, not just current week)
+  const allOpenedMatchIds = (matches || []).filter(m => {
     const wk = getMatchWeek ? getMatchWeek(m) : currentWk;
-    return wk === currentWk;
+    return wk <= currentWk;
   }).map(m => m.id);
+  const weeksSoFar = Math.max(currentWk, 1);
 
-  // Participation stats per person for the current week
+  // Participation stats per person — OVERALL across the whole tournament so far
   const participationStats = (participants || []).map(p => {
     const uid = p.name.toLowerCase();
-    const predsThisWeek = allPreds.filter(pr => pr.user_id === uid && weekMatchIds.includes(pr.match_id)).length;
-    const compsThisWeek = allComps.filter(c => c.user_id === uid && c.week === currentWk).length;
+    const predsCount = allPreds.filter(pr => pr.user_id === uid && allOpenedMatchIds.includes(pr.match_id)).length;
+    const compsCount = allComps.filter(c => c.user_id === uid).length;
     return {
       name: p.name,
-      predsCount: predsThisWeek,
-      predsTotal: weekMatchIds.length,
-      compsCount: compsThisWeek,
-      compsTotal: 4,
-      score: predsThisWeek + compsThisWeek, // simple combined activity score
+      predsCount,
+      predsTotal: allOpenedMatchIds.length,
+      compsCount,
+      compsTotal: weeksSoFar * 4,
+      score: predsCount + compsCount, // simple combined activity score
     };
   }).sort((a, b) => b.score - a.score);
 
@@ -2367,9 +2369,9 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
       {/* Participants */}
       {tab === "participants" && (
         <div className="fade-in">
-          <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 8 }}>WEEK {currentWk} PARTICIPATION TRACKER</div>
+          <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 8 }}>OVERALL PARTICIPATION TRACKER</div>
           <div style={{ padding:"11px 16px", background:"rgba(124,77,255,.07)", borderRadius:12, border:"1.5px solid rgba(124,77,255,.2)", fontSize:13, color:"var(--purple)", fontWeight:700, marginBottom:16 }}>
-            Use this to objectively decide Participation (+30) and Least Participation (-10) bonus awards — based on actual predictions made and challenges completed this week, not guesswork.
+            Use this to objectively decide Participation (+30) and Least Participation (-10) bonus awards — based on actual predictions made and challenges completed across the whole tournament so far, not guesswork.
           </div>
           {!predsLoaded ? (
             <div className="card" style={{ textAlign:"center", padding:30, color:"var(--muted)", fontWeight:700 }}>Loading activity data...</div>
