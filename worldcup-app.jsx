@@ -2293,6 +2293,45 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
           <div style={{ padding:"11px 16px", background:"rgba(0,191,165,.07)", borderRadius:12, border:"1.5px solid rgba(0,191,165,.2)", fontSize:13, color:"var(--teal)", fontWeight:700, marginBottom:20 }}>
             Select a category then click a participant to award instantly.
           </div>
+
+          {/* Surprise Pick Summary — auto-detected from completed matches */}
+          {(() => {
+            const surpriseCounts = {};
+            const surpriseDetails = {};
+            (matches || []).filter(m => m.status === "completed").forEach(m => {
+              const actualOutcome = m.homeScore > m.awayScore ? "home" : m.awayScore > m.homeScore ? "away" : "draw";
+              const matchPreds = allPreds.filter(pr => pr.match_id === m.id);
+              const correctPreds = matchPreds.filter(pr => pr.outcome === actualOutcome);
+              if (correctPreds.length === 1 && matchPreds.length > 1) {
+                const winner = correctPreds[0].user_id;
+                surpriseCounts[winner] = (surpriseCounts[winner] || 0) + 1;
+                if (!surpriseDetails[winner]) surpriseDetails[winner] = [];
+                const h = getTeam(m.home), a = getTeam(m.away);
+                surpriseDetails[winner].push(h.name + " " + m.homeScore + "-" + m.awayScore + " " + a.name);
+              }
+            });
+            const names = Object.keys(surpriseCounts).sort((a,b) => surpriseCounts[b]-surpriseCounts[a]);
+            if (names.length === 0) return (
+              <div className="card" style={{ marginBottom:20, textAlign:"center", padding:20, color:"var(--muted)", fontWeight:700, fontSize:13 }}>
+                🔮 No surprise picks yet — these appear once a match finishes where only one person predicted the correct outcome.
+              </div>
+            );
+            return (
+              <div className="card" style={{ marginBottom:20, borderLeft:"4px solid var(--purple)" }}>
+                <div style={{ fontWeight:900, fontSize:14, color:"var(--navy)", marginBottom:10 }}>🔮 Surprise Pick Leaderboard <span style={{ color:"var(--muted)", fontWeight:600, fontSize:12 }}>(auto-detected from completed matches)</span></div>
+                {names.map(n => (
+                  <div key={n} style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", padding:"8px 0", borderTop: names.indexOf(n)>0 ? "1px solid var(--border)" : "none" }}>
+                    <div>
+                      <div style={{ fontWeight:800, fontSize:13, color:"var(--navy)" }}>{n}</div>
+                      <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600 }}>{surpriseDetails[n].join(" · ")}</div>
+                    </div>
+                    <span className="badge" style={{ background:"rgba(124,77,255,.12)", color:"var(--purple)", border:"1.5px solid rgba(124,77,255,.3)", flexShrink:0 }}>{surpriseCounts[n]} pick{surpriseCounts[n]!==1?"s":""}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
           {[
             { label:"🏅 Participation",       pts:  30, desc:"Most active this week · completed all games + predictions",    color:"var(--teal)"  },
             { label:"😴 Least Participation", pts: -10, desc:"Least active this week · missed games or predictions",         color:"#FF6B35"      },
