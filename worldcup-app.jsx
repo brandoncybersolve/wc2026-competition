@@ -64,7 +64,7 @@ const FLAG_CODES = {
   usa:"us",   mex:"mx",   jpn:"jp",     mor:"ma",   cro:"hr",
   den:"dk",   swi:"ch",   sen:"sn",     aus:"au",   pol:"pl",
   cam:"cm",   ksa:"sa",   kor:"kr",     gha:"gh",   ser:"rs",
-  wal:"gb-wls",cos:"cr",  tun:"tn",     ecu:"ec",   qat:"qa",
+  cos:"cr",  tun:"tn",     ecu:"ec",   qat:"qa",
   can:"ca",   ira:"ir",   rsa:"za",     cze:"cz",   bih:"ba",
   par:"py",   hai:"ht",   sco:"gb-sct", tur:"tr",   cur:"cw",
   civ:"ci",   cpv:"cv",   egy:"eg",     nzl:"nz",   nor:"no",
@@ -157,7 +157,7 @@ const TEAMS = [
   { id:"aus", name:"Australia",    rank:19 }, { id:"pol", name:"Poland",       rank:20 },
   { id:"cam", name:"Cameroon",     rank:21 }, { id:"ksa", name:"Saudi Arabia", rank:22 },
   { id:"kor", name:"South Korea",  rank:23 }, { id:"gha", name:"Ghana",        rank:24 },
-  { id:"ser", name:"Serbia",       rank:25 }, { id:"wal", name:"Wales",        rank:26 },
+  { id:"ser", name:"Serbia",       rank:25 },
   { id:"cos", name:"Costa Rica",   rank:27 }, { id:"tun", name:"Tunisia",      rank:28 },
   { id:"ecu", name:"Ecuador",      rank:29 }, { id:"qat", name:"Qatar",        rank:30 },
   { id:"can", name:"Canada",       rank:31 }, { id:"ira", name:"Iran",         rank:32 },
@@ -292,7 +292,7 @@ const FLAG_QUIZ_BANK = {
   3: [
     { id:"aus", name:"Australia" }, { id:"den", name:"Denmark" },
     { id:"ira", name:"Iran" }, { id:"por", name:"Portugal" },
-    { id:"wal", name:"Wales" },
+    { id:"cro", name:"Croatia" },
   ],
   4: [
     { id:"alg", name:"Algeria" }, { id:"cam", name:"Cameroon" },
