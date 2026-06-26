@@ -2704,7 +2704,7 @@ export default function App() {
           const dbPort = await sbGet("portfolios");
           setParticipants(prev => prev.map(p => {
             const db   = dbP.find(d => d && (d.name === p.name || d.id === p.name.toLowerCase()));
-            const port = (dbPort||[]).filter(pt => pt && pt.user_id === p.name.toLowerCase()).map(pt => ({ team: pt.team_id, slot: pt.slot_type }));
+            const port = (dbPort||[]).filter(pt => pt && pt.user_id === p.name.toLowerCase()).map(pt => ({ team: pt.team_id, slot: pt.slot_type, stage: pt.current_stage || "Group Stage", won: pt.won_stages || [], eliminated: pt.eliminated || false }));
             return db ? { ...p, teamPts: db.team_pts||0, predPts: db.pred_pts||0, challengePts: db.challenge_pts||0, bonusPts: db.bonus_pts||0, portfolio: port.length > 0 ? port : p.portfolio } : p;
           }));
           // Update claimed teams
