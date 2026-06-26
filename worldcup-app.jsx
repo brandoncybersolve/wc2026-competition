@@ -2661,7 +2661,13 @@ export default function App() {
           setClaimedTeams({ contenders, underdogs });
           setParticipants(prev => prev.map(p => ({
             ...p,
-            portfolio: dbPort.filter(pt => pt && pt.user_id === p.name.toLowerCase()).map(pt => ({ team: pt.team_id, slot: pt.slot_type })),
+            portfolio: dbPort.filter(pt => pt && pt.user_id === p.name.toLowerCase()).map(pt => ({
+              team: pt.team_id,
+              slot: pt.slot_type,
+              stage: pt.current_stage || "Group Stage",
+              won: pt.won_stages || [],
+              eliminated: pt.eliminated || false,
+            })),
           })));
         }
 
@@ -2857,16 +2863,37 @@ export default function App() {
         const mult = port.multiplier || 1;
         const pts  = basePts * mult;
         const p    = participants.find(pp => pp.name.toLowerCase() === port.user_id);
+        // Update portfolio stage tracking
+        const currentWon = port.won_stages || [];
+        const newWon = currentWon.includes(stage) ? currentWon : [...currentWon, stage];
+        await sbUpdate("portfolios", "id=eq." + port.id, {
+          current_stage: stage,
+          won_stages: newWon,
+          eliminated: false,
+        });
         if (p && pts > 0) {
           const newPts = (p.teamPts || 0) + pts;
           await sbUpdate("participants", "id=eq." + port.user_id, { team_pts: newPts });
           await sbInsert("points_log", { user_id: port.user_id, pts, reason: team.name + " reached " + stage });
-          setParticipants(prev => prev.map(pp => pp.name.toLowerCase() === port.user_id ? { ...pp, teamPts: newPts } : pp));
+          setParticipants(prev => prev.map(pp => pp.name.toLowerCase() === port.user_id ? {
+            ...pp,
+            teamPts: newPts,
+            portfolio: (pp.portfolio || []).map(pt => pt.team === teamId ? { ...pt, stage, won: newWon, eliminated: false } : pt)
+          } : pp));
         }
       }
       const owner = participants.find(p => p.name.toLowerCase() === dbPort[0].user_id);
       sendChat("🏆 *" + team.name + " advance to the " + stage + "!*\n" + (owner ? "⭐ " + owner.name + " earns points! (" + (STAGE_PTS[stage] || 0) + " × " + dbPort[0].multiplier + "×)" : ""));
     } else {
+      for (const port of dbPort) {
+        await sbUpdate("portfolios", "id=eq." + port.id, {
+          eliminated: true,
+        });
+        setParticipants(prev => prev.map(pp => pp.name.toLowerCase() === port.user_id ? {
+          ...pp,
+          portfolio: (pp.portfolio || []).map(pt => pt.team === teamId ? { ...pt, eliminated: true } : pt)
+        } : pp));
+      }
       const owner = participants.find(p => p.name.toLowerCase() === dbPort[0].user_id);
       sendChat("💀 *" + team.name + " are ELIMINATED!*\n" + (owner ? owner.name + "'s " + team.name + " are out." : ""));
     }
