@@ -1201,7 +1201,7 @@ function Bracket({ matches }) {
 
   const Card = ({ id, roundColor }) => {
     const m = matchMap[id] || {};
-    const hs = m.home_score, as2 = m.away_score;
+    const hs = m.homeScore, as2 = m.awayScore;
     const done = m.status === 'completed';
     const hWon = done && parseInt(hs) > parseInt(as2);
     const aWon = done && parseInt(as2) > parseInt(hs);
@@ -1211,14 +1211,14 @@ function Bracket({ matches }) {
         border:'1.5px solid #e4e8f4', borderTop:`3px solid ${roundColor||'#ccc'}`,
         boxShadow:'0 2px 6px rgba(0,0,0,0.07)', flexShrink:0,
       }}>
-        {m.match_date && (
+        {m.date && (
           <div style={{fontSize:9,color:'#aaa',padding:'2px 7px',background:'#f8f9ff',fontWeight:700}}>
-            {m.match_date}{m.kickoff ? ' · '+new Date(m.kickoff).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Johannesburg'})+' SAST' : ''}
+            {m.date}{m.kickoff ? ' · '+new Date(m.kickoff).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Johannesburg'})+' SAST' : ''}
           </div>
         )}
-        <TeamRow tid={m.home_id} score={hs} won={hWon} />
+        <TeamRow tid={m.home} score={hs} won={hWon} />
         <div style={{height:1,background:'#f0f2f8'}}/>
-        <TeamRow tid={m.away_id} score={as2} won={aWon} />
+        <TeamRow tid={m.away} score={as2} won={aWon} />
       </div>
     );
   };
