@@ -1142,6 +1142,231 @@ function Leaderboard({ user, participants }) {
   );
 }
 
+// ─── BRACKET ─────────────────────────────────────────────────────
+function Bracket({ matches }) {
+  const matchMap = {};
+  (matches || []).forEach(m => { matchMap[m.id] = m; });
+
+  const SQUAD = {
+    fra:{owner:'Brandon',color:'#7C4DFF'}, cro:{owner:'Brandon',color:'#7C4DFF'},
+    mor:{owner:'Brandon',color:'#7C4DFF'}, sen:{owner:'Brandon',color:'#7C4DFF'},
+    eng:{owner:'Cherine',color:'#E91E8C'}, bel:{owner:'Cherine',color:'#E91E8C'},
+    mex:{owner:'Cherine',color:'#E91E8C'},
+    arg:{owner:'Anneli',color:'#1565C0'},  usa:{owner:'Anneli',color:'#1565C0'},
+    jpn:{owner:'Anneli',color:'#1565C0'},  swi:{owner:'Anneli',color:'#1565C0'},
+    bra:{owner:'Ruann',color:'#FF6B35'},   ger:{owner:'Ruann',color:'#FF6B35'},
+    ned:{owner:'Ruann',color:'#FF6B35'},   col:{owner:'Ruann',color:'#FF6B35'},
+    spa:{owner:'Jordan',color:'#2E7D32'},  por:{owner:'Jordan',color:'#2E7D32'},
+  };
+
+  const TEAM_NAMES = {
+    fra:'France',eng:'England',spa:'Spain',bra:'Brazil',arg:'Argentina',
+    por:'Portugal',ger:'Germany',ned:'Netherlands',bel:'Belgium',
+    usa:'USA',mex:'Mexico',jpn:'Japan',mor:'Morocco',cro:'Croatia',
+    swi:'Switzerland',sen:'Senegal',aus:'Australia',col:'Colombia',
+    rsa:'S.Africa',can:'Canada',bih:'Bosnia',civ:'Ivory Coast',
+    nor:'Norway',swe:'Sweden',cpv:'Cabo Verde',egy:'Egypt',par:'Paraguay',
+    ecu:'Ecuador',aut:'Austria',drc:'DR Congo',alg:'Algeria',gha:'Ghana',
+  };
+
+  // Match card — compact, clean
+  const MatchCard = ({ id, roundColor = '#1A1B4B' }) => {
+    const m = matchMap[id] || {};
+    const home = m.home_id;
+    const away = m.away_id;
+    const done = m.status === 'completed';
+
+    const Row = ({ tid, score, isWinner }) => {
+      const sq = SQUAD[tid];
+      const name = TEAM_NAMES[tid] || (tid ? tid.toUpperCase() : '');
+      return (
+        <div style={{
+          display:'flex', alignItems:'center', gap:5, padding:'5px 8px',
+          background: isWinner ? 'rgba(0,191,165,0.08)' : sq ? `${sq.color}11` : 'transparent',
+          borderLeft: sq ? `3px solid ${sq.color}` : '3px solid transparent',
+          minHeight: 30,
+        }}>
+          {tid && tid !== 'tbd' ? (
+            <>
+              <Flag code={tid} size={18} />
+              <span style={{ fontSize:11, fontWeight:700, color:'#1A1B4B', flex:1, lineHeight:1.2 }}>{name}</span>
+              {sq && <span style={{ fontSize:9, fontWeight:900, color:sq.color, whiteSpace:'nowrap' }}>{sq.owner}</span>}
+              {done && <span style={{ fontSize:12, fontWeight:900, color: isWinner?'var(--teal)':'#999', minWidth:14, textAlign:'right', marginLeft:4 }}>{score}</span>}
+            </>
+          ) : (
+            <span style={{ fontSize:10, color:'#bbb', fontStyle:'italic' }}>TBD</span>
+          )}
+        </div>
+      );
+    };
+
+    const homeScore = parseInt(m.home_score);
+    const awayScore = parseInt(m.away_score);
+    const homeWins = done && homeScore > awayScore;
+    const awayWins = done && awayScore > homeScore;
+
+    return (
+      <div style={{
+        background:'white', border:`1.5px solid #e4e8f0`,
+        borderTop:`3px solid ${roundColor}`,
+        borderRadius:8, overflow:'hidden', width:170,
+        boxShadow:'0 2px 8px rgba(0,0,0,0.07)',
+      }}>
+        {m.match_date && (
+          <div style={{ fontSize:9, color:'#999', padding:'2px 8px', background:'#f8f9ff', fontWeight:700, letterSpacing:0.3 }}>
+            {m.match_date} · {m.kickoff ? new Date(m.kickoff).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Johannesburg'}) : '?'} SAST
+          </div>
+        )}
+        <Row tid={home} score={m.home_score} isWinner={homeWins} />
+        <div style={{ height:1, background:'#f0f0f0' }} />
+        <Row tid={away} score={m.away_score} isWinner={awayWins} />
+      </div>
+    );
+  };
+
+  // A pair of matches connected to one next-round match via SVG lines
+  const MatchPair = ({ topId, botId, roundColor, side = 'right' }) => {
+    const CARD_H = 75; // approx card height
+    const GAP = 24;    // gap between cards in a pair
+    const totalH = CARD_H * 2 + GAP;
+    const midY = totalH / 2;
+
+    return (
+      <div style={{ display:'flex', alignItems:'center', gap:0 }}>
+        {side === 'left' && (
+          <svg width={32} height={totalH} style={{ flexShrink:0, overflow:'visible' }}>
+            {/* top card → midpoint */}
+            <line x1={0} y1={CARD_H/2} x2={16} y2={CARD_H/2} stroke="#c8d0e0" strokeWidth={1.5} />
+            <line x1={16} y1={CARD_H/2} x2={16} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
+            {/* bot card → midpoint */}
+            <line x1={0} y1={CARD_H + GAP + CARD_H/2} x2={16} y2={CARD_H + GAP + CARD_H/2} stroke="#c8d0e0" strokeWidth={1.5} />
+            <line x1={16} y1={CARD_H + GAP + CARD_H/2} x2={16} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
+            {/* midpoint → right */}
+            <line x1={16} y1={midY} x2={32} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
+          </svg>
+        )}
+        <div style={{ display:'flex', flexDirection:'column', gap:GAP }}>
+          <MatchCard id={topId} roundColor={roundColor} />
+          <MatchCard id={botId} roundColor={roundColor} />
+        </div>
+        {side === 'right' && (
+          <svg width={32} height={totalH} style={{ flexShrink:0, overflow:'visible' }}>
+            <line x1={32} y1={CARD_H/2} x2={16} y2={CARD_H/2} stroke="#c8d0e0" strokeWidth={1.5} />
+            <line x1={16} y1={CARD_H/2} x2={16} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
+            <line x1={32} y1={CARD_H + GAP + CARD_H/2} x2={16} y2={CARD_H + GAP + CARD_H/2} stroke="#c8d0e0" strokeWidth={1.5} />
+            <line x1={16} y1={CARD_H + GAP + CARD_H/2} x2={16} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
+            <line x1={16} y1={midY} x2={0} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
+          </svg>
+        )}
+      </div>
+    );
+  };
+
+  const RoundLabel = ({ title, color }) => (
+    <div style={{
+      writingMode:'vertical-rl', textOrientation:'mixed', transform:'rotate(180deg)',
+      fontSize:10, fontWeight:900, letterSpacing:2, textTransform:'uppercase',
+      color:'white', background:color, padding:'12px 6px', borderRadius:6,
+      alignSelf:'stretch', display:'flex', alignItems:'center', justifyContent:'center',
+      flexShrink:0,
+    }}>{title}</div>
+  );
+
+  const RoundCol = ({ ids, color, label, side='right' }) => {
+    const pairs = [];
+    for (let i = 0; i < ids.length; i += 2) {
+      pairs.push([ids[i], ids[i+1]]);
+    }
+    return (
+      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+        {side === 'left' && <RoundLabel title={label} color={color} />}
+        <div style={{ display:'flex', flexDirection:'column', gap:32 }}>
+          {pairs.map(([a,b],i) => (
+            <MatchPair key={i} topId={a} botId={b} roundColor={color} side={side} />
+          ))}
+        </div>
+        {side === 'right' && <RoundLabel title={label} color={color} />}
+      </div>
+    );
+  };
+
+  const COLOURS = {
+    r32:'#FF6B35', r16:'#00BFA5', qf:'#7C4DFF', sf:'#CC8800', final:'#1A1B4B'
+  };
+
+  return (
+    <div className="fade-in" style={{ padding:'16px 8px' }}>
+      <div className="phead">
+        <div className="ptitle">🏆 TOURNAMENT BRACKET</div>
+        <div className="psub">World Cup 2026 · Click any round to follow the journey to the Final</div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', margin:'12px 0 16px', padding:'10px 14px', background:'white', borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.06)', alignItems:'center' }}>
+        <span style={{ fontSize:11, fontWeight:800, color:'#999', marginRight:4 }}>SQUAD COLOURS:</span>
+        {[['Brandon','#7C4DFF'],['Cherine','#E91E8C'],['Anneli','#1565C0'],['Ruann','#FF6B35'],['Jordan','#2E7D32']].map(([name,color]) => (
+          <span key={name} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, fontWeight:700 }}>
+            <span style={{ width:10, height:10, borderRadius:2, background:color, display:'inline-block' }} />
+            {name}
+          </span>
+        ))}
+        <span style={{ fontSize:10, color:'#aaa', marginLeft:4 }}>Left border = team owner · Green = match winner</span>
+      </div>
+
+      {/* Bracket — horizontal scroll */}
+      <div style={{ overflowX:'auto', paddingBottom:20 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:1200, padding:'8px 4px' }}>
+
+          {/* LEFT: R32 → R16 → QF → SF */}
+          <RoundCol
+            ids={['r32_03','r32_06','r32_01','r32_04','r32_11','r32_10','r32_12','r32_08']}
+            color={COLOURS.r32} label="Round of 32" side="right"
+          />
+          <RoundCol
+            ids={['r16_01','r16_02','r16_03','r16_04']}
+            color={COLOURS.r16} label="Round of 16" side="right"
+          />
+          <RoundCol
+            ids={['qf_01','qf_02']}
+            color={COLOURS.qf} label="Quarter Final" side="right"
+          />
+          <RoundCol
+            ids={['sf_01','sf_01']}
+            color={COLOURS.sf} label="Semi Final" side="right"
+          />
+
+          {/* CENTRE: Final */}
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, padding:'0 12px', flexShrink:0 }}>
+            <div style={{ fontSize:11, fontWeight:900, color:COLOURS.final, letterSpacing:2, textTransform:'uppercase', textAlign:'center', marginBottom:4 }}>🏆 Final</div>
+            <MatchCard id="final_01" roundColor={COLOURS.final} />
+            <div style={{ fontSize:10, fontWeight:800, color:'#aaa', letterSpacing:1, textTransform:'uppercase', marginTop:8 }}>3rd Place</div>
+            <MatchCard id="third_01" roundColor="#888" />
+          </div>
+
+          {/* RIGHT: SF → QF → R16 → R32 */}
+          <RoundCol
+            ids={['sf_02','sf_02']}
+            color={COLOURS.sf} label="Semi Final" side="left"
+          />
+          <RoundCol
+            ids={['qf_03','qf_04']}
+            color={COLOURS.qf} label="Quarter Final" side="left"
+          />
+          <RoundCol
+            ids={['r16_05','r16_06','r16_07','r16_08']}
+            color={COLOURS.r16} label="Round of 16" side="left"
+          />
+          <RoundCol
+            ids={['r32_02','r32_05','r32_07','r32_09','r32_14','r32_13','r32_15','r32_16']}
+            color={COLOURS.r32} label="Round of 32" side="left"
+          />
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MY TEAMS ────────────────────────────────────────────────────
 function MyTeams({ user, participants }) {
   const me = (participants || []).find(p => p.name === user) || { name: user, portfolio: [] };
@@ -1170,7 +1395,7 @@ function MyTeams({ user, participants }) {
         const stage = pt.stage || "Group Stage";
         const won   = pt.won   || [];
         const elim  = pt.eliminated || false;
-        const earned = won.reduce((sum, s) => sum + ((STAGE_PTS[s] || 0) * mult), 0);
+        const earned = (STAGE_PTS[stage] || 0) * mult;
         return (
           <div key={pt.team} className={"card " + (elim ? "elim" : "")} style={{ marginBottom: 16, borderColor: color + "33", borderTopWidth: 4, borderTopColor: color, position: "relative", overflow: "hidden" }}>
             <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -2917,6 +3142,7 @@ export default function App() {
     { id: "predictions", icon: "🎯", label: "Predict"    },
     { id: "challenge",   icon: "🎮", label: "Challenge", badge: true },
     { id: "calendar",    icon: "📅", label: "Calendar"   },
+    { id: "bracket",     icon: "🏆", label: "Bracket"    },
     ...(isAdmin ? [{ id: "admin", icon: "⚙️", label: "Admin" }] : []),
   ];
 
@@ -2997,6 +3223,7 @@ export default function App() {
       case "predictions": return <Predictions user={currentUser} matches={matches} predictions={predictions} onSavePrediction={handleSavePrediction} showToast={showToast} />;
       case "challenge":   return <Challenge   user={currentUser} participants={participants} showToast={showToast} onAddChallengePoints={handleAddChallengePoints} />;
       case "calendar":    return <Calendar    matches={matches} />;
+      case "bracket":     return <Bracket     matches={matches} />;
       case "admin":       return <AdminPanel  user={currentUser} participants={participants} matches={matches} showToast={showToast} onRecordResult={handleRecordResult} onAwardBonus={handleAwardBonus} onAdvanceTeam={handleAdvanceTeam} />;
       default:            return <Dashboard   user={currentUser} participants={participants} matches={matches} setPage={setPage} showToast={showToast} />;
     }
