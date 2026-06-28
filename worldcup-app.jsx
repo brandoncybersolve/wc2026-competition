@@ -1269,8 +1269,8 @@ function Bracket({ matches }) {
 
   const RoundLabel = ({ label, color }) => (
     <div style={{
-      padding:'6px 14px', background:color, borderRadius:8, marginBottom:8,
-      display:'inline-block',
+      padding:'8px 16px', background:color, borderRadius:8, marginBottom:8,
+      width:'100%', boxSizing:'border-box',
     }}>
       <span style={{fontSize:11,fontWeight:900,color:'white',letterSpacing:1,textTransform:'uppercase'}}>{label}</span>
     </div>
