@@ -1364,9 +1364,7 @@ function MyTeams({ user, participants }) {
         const stage = pt.stage || "Group Stage";
         const won   = pt.won   || [];
         const elim  = pt.eliminated || false;
-        const stageOrder = ["Group Stage","Round of 32","Round of 16","Quarter Final","Semi Final","Final"];
-        const prevStage = stageOrder[stageOrder.indexOf(stage) - 1] || "Group Stage";
-        const earned = (STAGE_PTS[prevStage] || STAGE_PTS["Group Stage"]) * mult;
+        const earned = elim ? 0 : won.reduce((sum, s) => sum + ((STAGE_PTS[s] || 0) * mult), 0);
         return (
           <div key={pt.team} className={"card " + (elim ? "elim" : "")} style={{ marginBottom: 16, borderColor: color + "33", borderTopWidth: 4, borderTopColor: color, position: "relative", overflow: "hidden" }}>
             <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
