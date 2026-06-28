@@ -1172,17 +1172,17 @@ function Bracket({ matches }) {
   const ROUNDS = { r32:'#FF6B35', r16:'#00BFA5', qf:'#7C4DFF', sf:'#CC8800', final:'#1A1B4B' };
   const CARD_W = 158;
   const CARD_H = 68;
-  const PAIR_GAP = 20;   // gap between two cards in a pair
-  const GROUP_GAP = 36;  // gap between pairs
+  const PAIR_GAP = 20;
+  const GROUP_GAP = 36;
+  const LINE_W = 24;
 
-  // Team row inside a match card
   const TeamRow = ({ tid, score, won }) => {
     const sq = SQUAD[tid];
     return (
       <div style={{
-        display:'flex', alignItems:'center', gap:5, padding:'4px 7px',
-        minHeight:28, background: won ? 'rgba(0,191,165,0.1)' : sq ? sq.color+'14' : 'transparent',
-        borderLeft:`3px solid ${sq ? sq.color : 'transparent'}`,
+        display:'flex', alignItems:'center', gap:5, padding:'4px 7px', minHeight:28,
+        background: won ? 'rgba(0,191,165,0.1)' : sq ? sq.color+'14' : 'transparent',
+        borderLeft: `3px solid ${sq ? sq.color : 'transparent'}`,
       }}>
         {tid && tid !== 'tbd' ? (
           <>
@@ -1199,13 +1199,12 @@ function Bracket({ matches }) {
     );
   };
 
-  // Single match card
   const Card = ({ id, roundColor }) => {
     const m = matchMap[id] || {};
-    const hs = m.home_score, as_ = m.away_score;
+    const hs = m.home_score, as2 = m.away_score;
     const done = m.status === 'completed';
-    const hWon = done && parseInt(hs) > parseInt(as_);
-    const aWon = done && parseInt(as_) > parseInt(hs);
+    const hWon = done && parseInt(hs) > parseInt(as2);
+    const aWon = done && parseInt(as2) > parseInt(hs);
     return (
       <div style={{
         width:CARD_W, background:'white', borderRadius:8, overflow:'hidden',
@@ -1214,29 +1213,67 @@ function Bracket({ matches }) {
       }}>
         {m.match_date && (
           <div style={{fontSize:9,color:'#aaa',padding:'2px 7px',background:'#f8f9ff',fontWeight:700}}>
-            {m.match_date}
-            {m.kickoff ? ' · ' + new Date(m.kickoff).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Johannesburg'})+' SAST' : ''}
+            {m.match_date}{m.kickoff ? ' · '+new Date(m.kickoff).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Johannesburg'})+' SAST' : ''}
           </div>
         )}
         <TeamRow tid={m.home_id} score={hs} won={hWon} />
         <div style={{height:1,background:'#f0f2f8'}}/>
-        <TeamRow tid={m.away_id} score={as_} won={aWon} />
+        <TeamRow tid={m.away_id} score={as2} won={aWon} />
       </div>
     );
   };
 
-  // A column of match cards with SVG lines connecting pairs to next round
-  // direction: 'right' = lines go right, 'left' = lines go left
-  const BracketCol = ({ ids, roundColor, direction='right', placeholder=false }) => {
+  const TBDCard = ({ roundColor }) => (
+    <div style={{
+      width:CARD_W, background:'white', borderRadius:8, overflow:'hidden',
+      border:'1.5px solid #e4e8f4', borderTop:`3px solid ${roundColor||'#ccc'}`,
+      boxShadow:'0 2px 6px rgba(0,0,0,0.07)', flexShrink:0,
+    }}>
+      <TeamRow tid={null} />
+      <div style={{height:1,background:'#f0f2f8'}}/>
+      <TeamRow tid={null} />
+    </div>
+  );
+
+  const RoundPill = ({ label, color }) => (
+    <div style={{
+      writingMode:'vertical-rl', transform:'rotate(180deg)',
+      fontSize:9, fontWeight:900, letterSpacing:2, textTransform:'uppercase',
+      color:'white', background:color, padding:'10px 5px', borderRadius:6,
+      display:'flex', alignItems:'center', justifyContent:'center',
+      flexShrink:0, alignSelf:'stretch', marginRight:4,
+    }}>{label}</div>
+  );
+
+  const ColWithLines = ({ ids, roundColor, direction }) => {
     const pairH = CARD_H * 2 + PAIR_GAP;
     const groupH = pairH + GROUP_GAP;
     const pairs = [];
-    for (let i = 0; i < ids.length; i += 2) pairs.push([ids[i], ids[i+1] || null]);
-    const lineW = 24;
+    for (let i = 0; i < ids.length; i += 2) pairs.push([ids[i], ids[i+1]||null]);
+    const totalH = pairs.length * groupH - GROUP_GAP;
+    const isRight = direction === 'right';
 
     return (
-      <div style={{display:'flex', alignItems:'stretch', gap:0}}>
-        {/* Cards column */}
+      <div style={{display:'flex', alignItems:'stretch'}}>
+        {!isRight && (
+          <svg width={LINE_W} height={totalH} style={{flexShrink:0, overflow:'visible'}}>
+            {pairs.map(([,], pi) => {
+              const gt = pi * groupH;
+              const t = gt + CARD_H/2;
+              const b = gt + CARD_H + PAIR_GAP + CARD_H/2;
+              const mid = gt + pairH/2;
+              return (
+                <g key={pi}>
+                  <line x1={LINE_W} y1={t} x2={LINE_W/2} y2={t} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={t} x2={LINE_W/2} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W} y1={b} x2={LINE_W/2} y2={b} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={b} x2={LINE_W/2} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={mid} x2={0} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                </g>
+              );
+            })}
+          </svg>
+        )}
         <div style={{display:'flex', flexDirection:'column', gap:GROUP_GAP}}>
           {pairs.map(([a, b], pi) => (
             <div key={pi} style={{display:'flex', flexDirection:'column', gap:PAIR_GAP}}>
@@ -1245,34 +1282,20 @@ function Bracket({ matches }) {
             </div>
           ))}
         </div>
-
-        {/* SVG lines */}
-        {!placeholder && (
-          <svg
-            width={lineW}
-            height={pairs.length * groupH - GROUP_GAP}
-            style={{flexShrink:0, overflow:'visible'}}
-          >
-            {pairs.map(([a, b], pi) => {
-              const groupTop = pi * groupH;
-              const topMid   = groupTop + CARD_H / 2;
-              const botMid   = groupTop + CARD_H + PAIR_GAP + CARD_H / 2;
-              const midY     = groupTop + pairH / 2;
-              const x0 = direction === 'right' ? 0 : lineW;
-              const x1 = direction === 'right' ? lineW / 2 : lineW / 2;
-              const x2 = direction === 'right' ? lineW : 0;
+        {isRight && (
+          <svg width={LINE_W} height={totalH} style={{flexShrink:0, overflow:'visible'}}>
+            {pairs.map(([,], pi) => {
+              const gt = pi * groupH;
+              const t = gt + CARD_H/2;
+              const b = gt + CARD_H + PAIR_GAP + CARD_H/2;
+              const mid = gt + pairH/2;
               return (
                 <g key={pi}>
-                  {/* top card horizontal */}
-                  <line x1={x0} y1={topMid} x2={x1} y2={topMid} stroke="#c8d4e8" strokeWidth={1.5}/>
-                  {/* top card to midpoint vertical */}
-                  <line x1={x1} y1={topMid} x2={x1} y2={midY} stroke="#c8d4e8" strokeWidth={1.5}/>
-                  {/* bottom card horizontal */}
-                  {b && <line x1={x0} y1={botMid} x2={x1} y2={botMid} stroke="#c8d4e8" strokeWidth={1.5}/>}
-                  {/* bottom card to midpoint vertical */}
-                  {b && <line x1={x1} y1={botMid} x2={x1} y2={midY} stroke="#c8d4e8" strokeWidth={1.5}/>}
-                  {/* midpoint to next round */}
-                  <line x1={x1} y1={midY} x2={x2} y2={midY} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={0} y1={t} x2={LINE_W/2} y2={t} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={t} x2={LINE_W/2} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={0} y1={b} x2={LINE_W/2} y2={b} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={b} x2={LINE_W/2} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={mid} x2={LINE_W} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
                 </g>
               );
             })}
@@ -1282,65 +1305,61 @@ function Bracket({ matches }) {
     );
   };
 
-  // Vertical round label pill
-  const RoundPill = ({ label, color }) => (
-    <div style={{
-      writingMode:'vertical-rl', transform:'rotate(180deg)',
-      fontSize:9, fontWeight:900, letterSpacing:2, textTransform:'uppercase',
-      color:'white', background:color, padding:'10px 5px', borderRadius:6,
-      alignSelf:'stretch', display:'flex', alignItems:'center', justifyContent:'center',
-      flexShrink:0, marginRight:4,
-    }}>{label}</div>
-  );
-
-  // TBD placeholder cards for future rounds
-  const TBDCard = ({ roundColor }) => (
-    <div style={{
-      width:CARD_W, background:'white', borderRadius:8, overflow:'hidden',
-      border:'1.5px solid #e4e8f4', borderTop:`3px solid ${roundColor}`,
-      boxShadow:'0 2px 6px rgba(0,0,0,0.07)', flexShrink:0,
-    }}>
-      <TeamRow tid={null} />
-      <div style={{height:1,background:'#f0f2f8'}}/>
-      <TeamRow tid={null} />
-    </div>
-  );
-
-  const TBDCol = ({ count, roundColor, direction='right' }) => {
+  const TBDColWithLines = ({ count, roundColor, direction }) => {
     const pairs = Math.ceil(count/2);
     const pairH = CARD_H * 2 + PAIR_GAP;
     const groupH = pairH + GROUP_GAP;
-    const lineW = 24;
+    const totalH = pairs * groupH - GROUP_GAP;
+    const isRight = direction === 'right';
+
     return (
-      <div style={{display:'flex', alignItems:'stretch', gap:0}}>
+      <div style={{display:'flex', alignItems:'stretch'}}>
+        {!isRight && (
+          <svg width={LINE_W} height={totalH} style={{flexShrink:0, overflow:'visible'}}>
+            {Array.from({length:pairs}).map((_, pi) => {
+              const gt = pi * groupH;
+              const t = gt + CARD_H/2;
+              const b = gt + CARD_H + PAIR_GAP + CARD_H/2;
+              const mid = gt + pairH/2;
+              return (
+                <g key={pi}>
+                  <line x1={LINE_W} y1={t} x2={LINE_W/2} y2={t} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={t} x2={LINE_W/2} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W} y1={b} x2={LINE_W/2} y2={b} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={b} x2={LINE_W/2} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={mid} x2={0} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                </g>
+              );
+            })}
+          </svg>
+        )}
         <div style={{display:'flex', flexDirection:'column', gap:GROUP_GAP}}>
-          {Array.from({length:pairs}).map((_,pi) => (
+          {Array.from({length:pairs}).map((_, pi) => (
             <div key={pi} style={{display:'flex', flexDirection:'column', gap:PAIR_GAP}}>
               <TBDCard roundColor={roundColor} />
-              {pi * 2 + 1 < count && <TBDCard roundColor={roundColor} />}
+              {pi*2+1 < count && <TBDCard roundColor={roundColor} />}
             </div>
           ))}
         </div>
-        <svg width={lineW} height={pairs*groupH - GROUP_GAP} style={{flexShrink:0,overflow:'visible'}}>
-          {Array.from({length:pairs}).map((_,pi) => {
-            const groupTop = pi * groupH;
-            const topMid = groupTop + CARD_H/2;
-            const botMid = groupTop + CARD_H + PAIR_GAP + CARD_H/2;
-            const midY   = groupTop + pairH/2;
-            const x0 = direction==='right' ? 0 : lineW;
-            const x1 = lineW/2;
-            const x2 = direction==='right' ? lineW : 0;
-            return (
-              <g key={pi}>
-                <line x1={x0} y1={topMid} x2={x1} y2={topMid} stroke="#c8d4e8" strokeWidth={1.5}/>
-                <line x1={x1} y1={topMid} x2={x1} y2={midY} stroke="#c8d4e8" strokeWidth={1.5}/>
-                <line x1={x0} y1={botMid} x2={x1} y2={botMid} stroke="#c8d4e8" strokeWidth={1.5}/>
-                <line x1={x1} y1={botMid} x2={x1} y2={midY} stroke="#c8d4e8" strokeWidth={1.5}/>
-                <line x1={x1} y1={midY}   x2={x2} y2={midY}  stroke="#c8d4e8" strokeWidth={1.5}/>
-              </g>
-            );
-          })}
-        </svg>
+        {isRight && (
+          <svg width={LINE_W} height={totalH} style={{flexShrink:0, overflow:'visible'}}>
+            {Array.from({length:pairs}).map((_, pi) => {
+              const gt = pi * groupH;
+              const t = gt + CARD_H/2;
+              const b = gt + CARD_H + PAIR_GAP + CARD_H/2;
+              const mid = gt + pairH/2;
+              return (
+                <g key={pi}>
+                  <line x1={0} y1={t} x2={LINE_W/2} y2={t} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={t} x2={LINE_W/2} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={0} y1={b} x2={LINE_W/2} y2={b} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={b} x2={LINE_W/2} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                  <line x1={LINE_W/2} y1={mid} x2={LINE_W} y2={mid} stroke="#c8d4e8" strokeWidth={1.5}/>
+                </g>
+              );
+            })}
+          </svg>
+        )}
       </div>
     );
   };
@@ -1349,10 +1368,8 @@ function Bracket({ matches }) {
     <div className="fade-in" style={{padding:'16px 8px'}}>
       <div className="phead">
         <div className="ptitle">🏆 TOURNAMENT BRACKET</div>
-        <div className="psub">World Cup 2026 · Follow each team's journey to the Final in MetLife Stadium</div>
+        <div className="psub">World Cup 2026 · Follow each team's journey to the Final</div>
       </div>
-
-      {/* Legend */}
       <div style={{display:'flex',gap:10,flexWrap:'wrap',margin:'12px 0 16px',padding:'10px 14px',background:'white',borderRadius:12,boxShadow:'0 2px 8px rgba(0,0,0,0.06)',alignItems:'center'}}>
         <span style={{fontSize:11,fontWeight:800,color:'#aaa',marginRight:4}}>SQUAD:</span>
         {[['Brandon','#7C4DFF'],['Cherine','#E91E8C'],['Anneli','#1565C0'],['Ruann','#FF6B35'],['Jordan','#2E7D32']].map(([n,c])=>(
@@ -1362,255 +1379,32 @@ function Bracket({ matches }) {
         ))}
         <span style={{fontSize:10,color:'#bbb',marginLeft:6}}>Coloured border = squad team · Green score = winner</span>
       </div>
-
-      {/* Main bracket — horizontally scrollable */}
       <div style={{overflowX:'auto',paddingBottom:24}}>
         <div style={{display:'flex',alignItems:'center',gap:0,minWidth:1280,padding:'4px'}}>
-
-          {/* ══ LEFT HALF: R32 → R16 → QF → SF ══ */}
           <RoundPill label="Round of 32" color={ROUNDS.r32} />
-          <BracketCol
-            ids={['r32_03','r32_06','r32_01','r32_04','r32_11','r32_10','r32_12','r32_08']}
-            roundColor={ROUNDS.r32} direction="right"
-          />
+          <ColWithLines ids={['r32_03','r32_06','r32_01','r32_04','r32_11','r32_10','r32_12','r32_08']} roundColor={ROUNDS.r32} direction="right" />
           <RoundPill label="Round of 16" color={ROUNDS.r16} />
-          <TBDCol count={4} roundColor={ROUNDS.r16} direction="right" />
+          <TBDColWithLines count={4} roundColor={ROUNDS.r16} direction="right" />
           <RoundPill label="Quarter Final" color={ROUNDS.qf} />
-          <TBDCol count={2} roundColor={ROUNDS.qf} direction="right" />
+          <TBDColWithLines count={2} roundColor={ROUNDS.qf} direction="right" />
           <RoundPill label="Semi Final" color={ROUNDS.sf} />
-          <TBDCol count={1} roundColor={ROUNDS.sf} direction="right" placeholder />
-
-          {/* ══ CENTRE: Final + 3rd place ══ */}
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:20,padding:'0 16px',flexShrink:0}}>
-            <div style={{fontSize:12,fontWeight:900,color:ROUNDS.final,letterSpacing:2,textTransform:'uppercase',textAlign:'center'}}>🏆 FINAL</div>
-            <div style={{fontSize:9,color:'#aaa',textAlign:'center',marginTop:-12}}>Jul 19 · MetLife Stadium</div>
+          <TBDCard roundColor={ROUNDS.sf} />
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16,padding:'0 20px',flexShrink:0}}>
+            <div style={{fontSize:12,fontWeight:900,color:ROUNDS.final,letterSpacing:2,textTransform:'uppercase'}}>🏆 FINAL</div>
+            <div style={{fontSize:9,color:'#aaa',marginTop:-12}}>Jul 19 · MetLife Stadium</div>
             <TBDCard roundColor={ROUNDS.final} />
-            <div style={{height:1,width:'100%',background:'#eee',margin:'4px 0'}}/>
-            <div style={{fontSize:9,fontWeight:800,color:'#aaa',letterSpacing:1,textTransform:'uppercase',textAlign:'center'}}>3rd Place · Jul 18</div>
+            <div style={{height:1,width:'100%',background:'#eee'}}/>
+            <div style={{fontSize:9,fontWeight:800,color:'#aaa',letterSpacing:1,textTransform:'uppercase'}}>3rd Place · Jul 18</div>
             <TBDCard roundColor="#aaa" />
           </div>
-
-          {/* ══ RIGHT HALF: SF → QF → R16 → R32 ══ */}
-          <TBDCol count={1} roundColor={ROUNDS.sf} direction="left" placeholder />
+          <TBDCard roundColor={ROUNDS.sf} />
           <RoundPill label="Semi Final" color={ROUNDS.sf} />
-          <TBDCol count={2} roundColor={ROUNDS.qf} direction="left" />
+          <TBDColWithLines count={2} roundColor={ROUNDS.qf} direction="left" />
           <RoundPill label="Quarter Final" color={ROUNDS.qf} />
-          <TBDCol count={4} roundColor={ROUNDS.r16} direction="left" />
+          <TBDColWithLines count={4} roundColor={ROUNDS.r16} direction="left" />
           <RoundPill label="Round of 16" color={ROUNDS.r16} />
-          <BracketCol
-            ids={['r32_02','r32_05','r32_07','r32_09','r32_14','r32_13','r32_15','r32_16']}
-            roundColor={ROUNDS.r32} direction="left"
-          />
+          <ColWithLines ids={['r32_02','r32_05','r32_07','r32_09','r32_14','r32_13','r32_15','r32_16']} roundColor={ROUNDS.r32} direction="left" />
           <RoundPill label="Round of 32" color={ROUNDS.r32} />
-
-        </div>
-      </div>
-    </div>
-  );
-}
-
-  const TEAM_NAMES = {
-    fra:'France',eng:'England',spa:'Spain',bra:'Brazil',arg:'Argentina',
-    por:'Portugal',ger:'Germany',ned:'Netherlands',bel:'Belgium',
-    usa:'USA',mex:'Mexico',jpn:'Japan',mor:'Morocco',cro:'Croatia',
-    swi:'Switzerland',sen:'Senegal',aus:'Australia',col:'Colombia',
-    rsa:'S.Africa',can:'Canada',bih:'Bosnia',civ:'Ivory Coast',
-    nor:'Norway',swe:'Sweden',cpv:'Cabo Verde',egy:'Egypt',par:'Paraguay',
-    ecu:'Ecuador',aut:'Austria',drc:'DR Congo',alg:'Algeria',gha:'Ghana',
-  };
-
-  // Match card — compact, clean
-  const MatchCard = ({ id, roundColor = '#1A1B4B' }) => {
-    const m = matchMap[id] || {};
-    const home = m.home_id;
-    const away = m.away_id;
-    const done = m.status === 'completed';
-
-    const Row = ({ tid, score, isWinner }) => {
-      const sq = SQUAD[tid];
-      const name = TEAM_NAMES[tid] || (tid ? tid.toUpperCase() : '');
-      return (
-        <div style={{
-          display:'flex', alignItems:'center', gap:5, padding:'5px 8px',
-          background: isWinner ? 'rgba(0,191,165,0.08)' : sq ? `${sq.color}11` : 'transparent',
-          borderLeft: sq ? `3px solid ${sq.color}` : '3px solid transparent',
-          minHeight: 30,
-        }}>
-          {tid && tid !== 'tbd' ? (
-            <>
-              <Flag code={tid} size={18} />
-              <span style={{ fontSize:11, fontWeight:700, color:'#1A1B4B', flex:1, lineHeight:1.2 }}>{name}</span>
-              {sq && <span style={{ fontSize:9, fontWeight:900, color:sq.color, whiteSpace:'nowrap' }}>{sq.owner}</span>}
-              {done && <span style={{ fontSize:12, fontWeight:900, color: isWinner?'var(--teal)':'#999', minWidth:14, textAlign:'right', marginLeft:4 }}>{score}</span>}
-            </>
-          ) : (
-            <span style={{ fontSize:10, color:'#bbb', fontStyle:'italic' }}>TBD</span>
-          )}
-        </div>
-      );
-    };
-
-    const homeScore = parseInt(m.home_score);
-    const awayScore = parseInt(m.away_score);
-    const homeWins = done && homeScore > awayScore;
-    const awayWins = done && awayScore > homeScore;
-
-    return (
-      <div style={{
-        background:'white', border:`1.5px solid #e4e8f0`,
-        borderTop:`3px solid ${roundColor}`,
-        borderRadius:8, overflow:'hidden', width:170,
-        boxShadow:'0 2px 8px rgba(0,0,0,0.07)',
-      }}>
-        {m.match_date && (
-          <div style={{ fontSize:9, color:'#999', padding:'2px 8px', background:'#f8f9ff', fontWeight:700, letterSpacing:0.3 }}>
-            {m.match_date} · {m.kickoff ? new Date(m.kickoff).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Johannesburg'}) : '?'} SAST
-          </div>
-        )}
-        <Row tid={home} score={m.home_score} isWinner={homeWins} />
-        <div style={{ height:1, background:'#f0f0f0' }} />
-        <Row tid={away} score={m.away_score} isWinner={awayWins} />
-      </div>
-    );
-  };
-
-  // A pair of matches connected to one next-round match via SVG lines
-  const MatchPair = ({ topId, botId, roundColor, side = 'right' }) => {
-    const CARD_H = 75; // approx card height
-    const GAP = 24;    // gap between cards in a pair
-    const totalH = CARD_H * 2 + GAP;
-    const midY = totalH / 2;
-
-    return (
-      <div style={{ display:'flex', alignItems:'center', gap:0 }}>
-        {side === 'left' && (
-          <svg width={32} height={totalH} style={{ flexShrink:0, overflow:'visible' }}>
-            {/* top card → midpoint */}
-            <line x1={0} y1={CARD_H/2} x2={16} y2={CARD_H/2} stroke="#c8d0e0" strokeWidth={1.5} />
-            <line x1={16} y1={CARD_H/2} x2={16} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
-            {/* bot card → midpoint */}
-            <line x1={0} y1={CARD_H + GAP + CARD_H/2} x2={16} y2={CARD_H + GAP + CARD_H/2} stroke="#c8d0e0" strokeWidth={1.5} />
-            <line x1={16} y1={CARD_H + GAP + CARD_H/2} x2={16} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
-            {/* midpoint → right */}
-            <line x1={16} y1={midY} x2={32} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
-          </svg>
-        )}
-        <div style={{ display:'flex', flexDirection:'column', gap:GAP }}>
-          <MatchCard id={topId} roundColor={roundColor} />
-          <MatchCard id={botId} roundColor={roundColor} />
-        </div>
-        {side === 'right' && (
-          <svg width={32} height={totalH} style={{ flexShrink:0, overflow:'visible' }}>
-            <line x1={32} y1={CARD_H/2} x2={16} y2={CARD_H/2} stroke="#c8d0e0" strokeWidth={1.5} />
-            <line x1={16} y1={CARD_H/2} x2={16} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
-            <line x1={32} y1={CARD_H + GAP + CARD_H/2} x2={16} y2={CARD_H + GAP + CARD_H/2} stroke="#c8d0e0" strokeWidth={1.5} />
-            <line x1={16} y1={CARD_H + GAP + CARD_H/2} x2={16} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
-            <line x1={16} y1={midY} x2={0} y2={midY} stroke="#c8d0e0" strokeWidth={1.5} />
-          </svg>
-        )}
-      </div>
-    );
-  };
-
-  const RoundLabel = ({ title, color }) => (
-    <div style={{
-      writingMode:'vertical-rl', textOrientation:'mixed', transform:'rotate(180deg)',
-      fontSize:10, fontWeight:900, letterSpacing:2, textTransform:'uppercase',
-      color:'white', background:color, padding:'12px 6px', borderRadius:6,
-      alignSelf:'stretch', display:'flex', alignItems:'center', justifyContent:'center',
-      flexShrink:0,
-    }}>{title}</div>
-  );
-
-  const RoundCol = ({ ids, color, label, side='right' }) => {
-    const pairs = [];
-    for (let i = 0; i < ids.length; i += 2) {
-      pairs.push([ids[i], ids[i+1]]);
-    }
-    return (
-      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-        {side === 'left' && <RoundLabel title={label} color={color} />}
-        <div style={{ display:'flex', flexDirection:'column', gap:32 }}>
-          {pairs.map(([a,b],i) => (
-            <MatchPair key={i} topId={a} botId={b} roundColor={color} side={side} />
-          ))}
-        </div>
-        {side === 'right' && <RoundLabel title={label} color={color} />}
-      </div>
-    );
-  };
-
-  const COLOURS = {
-    r32:'#FF6B35', r16:'#00BFA5', qf:'#7C4DFF', sf:'#CC8800', final:'#1A1B4B'
-  };
-
-  return (
-    <div className="fade-in" style={{ padding:'16px 8px' }}>
-      <div className="phead">
-        <div className="ptitle">🏆 TOURNAMENT BRACKET</div>
-        <div className="psub">World Cup 2026 · Click any round to follow the journey to the Final</div>
-      </div>
-
-      {/* Legend */}
-      <div style={{ display:'flex', gap:10, flexWrap:'wrap', margin:'12px 0 16px', padding:'10px 14px', background:'white', borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.06)', alignItems:'center' }}>
-        <span style={{ fontSize:11, fontWeight:800, color:'#999', marginRight:4 }}>SQUAD COLOURS:</span>
-        {[['Brandon','#7C4DFF'],['Cherine','#E91E8C'],['Anneli','#1565C0'],['Ruann','#FF6B35'],['Jordan','#2E7D32']].map(([name,color]) => (
-          <span key={name} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, fontWeight:700 }}>
-            <span style={{ width:10, height:10, borderRadius:2, background:color, display:'inline-block' }} />
-            {name}
-          </span>
-        ))}
-        <span style={{ fontSize:10, color:'#aaa', marginLeft:4 }}>Left border = team owner · Green = match winner</span>
-      </div>
-
-      {/* Bracket — horizontal scroll */}
-      <div style={{ overflowX:'auto', paddingBottom:20 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:1200, padding:'8px 4px' }}>
-
-          {/* LEFT: R32 → R16 → QF → SF */}
-          <RoundCol
-            ids={['r32_03','r32_06','r32_01','r32_04','r32_11','r32_10','r32_12','r32_08']}
-            color={COLOURS.r32} label="Round of 32" side="right"
-          />
-          <RoundCol
-            ids={['r16_01','r16_02','r16_03','r16_04']}
-            color={COLOURS.r16} label="Round of 16" side="right"
-          />
-          <RoundCol
-            ids={['qf_01','qf_02']}
-            color={COLOURS.qf} label="Quarter Final" side="right"
-          />
-          <RoundCol
-            ids={['sf_01','sf_01']}
-            color={COLOURS.sf} label="Semi Final" side="right"
-          />
-
-          {/* CENTRE: Final */}
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, padding:'0 12px', flexShrink:0 }}>
-            <div style={{ fontSize:11, fontWeight:900, color:COLOURS.final, letterSpacing:2, textTransform:'uppercase', textAlign:'center', marginBottom:4 }}>🏆 Final</div>
-            <MatchCard id="final_01" roundColor={COLOURS.final} />
-            <div style={{ fontSize:10, fontWeight:800, color:'#aaa', letterSpacing:1, textTransform:'uppercase', marginTop:8 }}>3rd Place</div>
-            <MatchCard id="third_01" roundColor="#888" />
-          </div>
-
-          {/* RIGHT: SF → QF → R16 → R32 */}
-          <RoundCol
-            ids={['sf_02','sf_02']}
-            color={COLOURS.sf} label="Semi Final" side="left"
-          />
-          <RoundCol
-            ids={['qf_03','qf_04']}
-            color={COLOURS.qf} label="Quarter Final" side="left"
-          />
-          <RoundCol
-            ids={['r16_05','r16_06','r16_07','r16_08']}
-            color={COLOURS.r16} label="Round of 16" side="left"
-          />
-          <RoundCol
-            ids={['r32_02','r32_05','r32_07','r32_09','r32_14','r32_13','r32_15','r32_16']}
-            color={COLOURS.r32} label="Round of 32" side="left"
-          />
-
         </div>
       </div>
     </div>
