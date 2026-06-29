@@ -1303,21 +1303,21 @@ function Bracket({ matches }) {
 
       {/* ROUND OF 16 */}
       <RoundLabel label="🔥 Round of 16" color={ROUNDS.r16}/>
-      <CardRow ids={['r16_01','r16_02','r16_03','r16_04','r16_05','r16_06','r16_07','r16_08']} roundColor={ROUNDS.r16} isTBD={true}/>
+      <CardRow ids={['r16_01','r16_02','r16_03','r16_04','r16_05','r16_06','r16_07','r16_08']} roundColor={ROUNDS.r16} isTBD={false}/>
 
       {/* Lines: 8 → 4 */}
       <Connector topCount={8} color={ROUNDS.qf}/>
 
       {/* QUARTER FINALS */}
       <RoundLabel label="💥 Quarter Finals" color={ROUNDS.qf}/>
-      <CardRow ids={['qf_01','qf_02','qf_03','qf_04']} roundColor={ROUNDS.qf} isTBD={true}/>
+      <CardRow ids={['qf_01','qf_02','qf_03','qf_04']} roundColor={ROUNDS.qf} isTBD={false}/>
 
       {/* Lines: 4 → 2 */}
       <Connector topCount={4} color={ROUNDS.sf}/>
 
       {/* SEMI FINALS */}
       <RoundLabel label="⚡ Semi Finals" color={ROUNDS.sf}/>
-      <CardRow ids={['sf_01','sf_02']} roundColor={ROUNDS.sf} isTBD={true}/>
+      <CardRow ids={['sf_01','sf_02']} roundColor={ROUNDS.sf} isTBD={false}/>
 
       {/* Lines: 2 → 1 */}
       <Connector topCount={2} color={ROUNDS.final}/>
@@ -1325,8 +1325,8 @@ function Bracket({ matches }) {
       {/* FINAL */}
       <RoundLabel label="🏆 Final · Jul 19 · MetLife Stadium" color={ROUNDS.final}/>
       <div style={{display:'flex',gap:8}}>
-        <div style={{flex:1}}><TBDCard roundColor={ROUNDS.final}/></div>
-        <div style={{flex:1}}><TBDCard roundColor="#888"/></div>
+        <div style={{flex:1}}><MCard id="final_01" roundColor={ROUNDS.final}/></div>
+        <div style={{flex:1}}><MCard id="third_01" roundColor="#888"/></div>
       </div>
       <div style={{display:'flex',gap:8,marginTop:4}}>
         <div style={{flex:1,textAlign:'center',fontSize:9,color:'var(--muted)',fontWeight:700}}>FINAL</div>
