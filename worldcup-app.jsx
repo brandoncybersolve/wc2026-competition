@@ -1166,8 +1166,8 @@ function Bracket({ matches }) {
     const m = matchMap[id] || {};
     const hs = m.homeScore, as2 = m.awayScore;
     const done = m.status === 'completed';
-    const hWon = done && parseInt(hs) > parseInt(as2);
-    const aWon = done && parseInt(as2) > parseInt(hs);
+    const hWon = done && (m.winner ? m.winner === 'home' : parseInt(hs) > parseInt(as2));
+    const aWon = done && (m.winner ? m.winner === 'away' : parseInt(as2) > parseInt(hs));
     const hSq = SQUAD[m.home], aSq = SQUAD[m.away];
 
     const Row = ({ tid, score, won, sq }) => (
@@ -1201,6 +1201,11 @@ function Bracket({ matches }) {
         <Row tid={m.home} score={hs} won={hWon} sq={hSq} />
         <div style={{height:1,background:'#f0f2f8'}}/>
         <Row tid={m.away} score={as2} won={aWon} sq={aSq} />
+        {m.notes && (
+          <div style={{fontSize:8,color:'#999',padding:'2px 6px',background:'#fff8e1',fontWeight:700,fontStyle:'italic',borderTop:'1px solid #f0f2f8'}}>
+            ⚽ {m.notes}
+          </div>
+        )}
       </div>
     );
   };
@@ -2834,6 +2839,8 @@ export default function App() {
             status:    m.status     || "open",
             homeScore: m.home_score != null ? m.home_score : null,
             awayScore: m.away_score != null ? m.away_score : null,
+            notes:     m.notes      || null,
+            winner:    m.winner     || null,
           })));
         }
 
@@ -2917,6 +2924,8 @@ export default function App() {
             kickoff: m.kickoff||null, status: m.status||"open",
             homeScore: m.home_score != null ? m.home_score : null,
             awayScore: m.away_score != null ? m.away_score : null,
+            notes: m.notes || null,
+            winner: m.winner || null,
           })));
         }
       } catch(e) { console.warn("Poll error:", e); }
