@@ -612,7 +612,7 @@ function HowToPlay({ onDone }) {
 // ─── NAME PICKER — shown every time app opens ────────────────────
 function NamePicker({ participants, onSelect }) {
   const [selecting, setSelecting] = useState(null);
-  const getTotal = p => (p.teamPts||0) + (p.predPts||0) + (p.challengePts||0) + (p.bonusPts||0);
+  const getTotal = p => (p.teamPts||0) + (p.predPts||0) + (p.challengePts||0) + (p.bonusPts||0) + (p.gloryRoadPts||0);
   const hasTeams = name => (participants||[]).find(p => p.name === name)?.portfolio?.length > 0;
 
   return (
@@ -626,7 +626,7 @@ function NamePicker({ participants, onSelect }) {
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 16 }}>
           {PEOPLE.map(name => {
-            const p      = (participants||[]).find(pp => pp.name === name) || { name, teamPts:0, predPts:0, challengePts:0, bonusPts:0 };
+            const p      = (participants||[]).find(pp => pp.name === name) || { name, teamPts:0, predPts:0, challengePts:0, bonusPts:0, gloryRoadPts:0 };
             const total  = getTotal(p);
             const done   = hasTeams(name);
             const isSel  = selecting === name;
@@ -890,8 +890,8 @@ function Onboarding({ onComplete, claimedTeams, eliteAssign, whoOverride }) {
 // ─── DASHBOARD ────────────────────────────────────────────────────
 function Dashboard({ user, participants, matches, setPage, showToast }) {
   const me = (participants || []).find(p => p.name === user) || { name: user, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, portfolio: [] };
-  const myTotal  = me.teamPts + me.predPts + me.challengePts + me.bonusPts;
-  const sorted   = [...(participants || [])].sort((a,b) => (b.teamPts+b.predPts+b.challengePts+b.bonusPts)-(a.teamPts+a.predPts+a.challengePts+a.bonusPts));
+  const myTotal  = me.teamPts + me.predPts + me.challengePts + me.bonusPts + (me.gloryRoadPts||0);
+  const sorted   = [...(participants || [])].sort((a,b) => (b.teamPts+b.predPts+b.challengePts+b.bonusPts+(b.gloryRoadPts||0))-(a.teamPts+a.predPts+a.challengePts+a.bonusPts+(a.gloryRoadPts||0)));
   const myRank   = sorted.findIndex(p => p.name === user) + 1;
   const leader   = sorted[0] || me;
   const gap      = (leader.teamPts+leader.predPts+leader.challengePts+leader.bonusPts) - myTotal;
@@ -901,7 +901,7 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
   const STAGE_ORDER   = ["Group Stage","Round of 32","Round of 16","Quarter Final","Semi Final","Final","Champion"];
   const getUnderdogStage = p => { const d = (p.portfolio||[]).find(pt=>pt.slot==="underdog"); return d && d.stage ? STAGE_ORDER.indexOf(d.stage) : 0; };
   const predChalPts   = p => (p.predPts||0) + (p.challengePts||0);
-  const overallSorted   = [...(participants||[])].sort((a,b)=>(b.teamPts+b.predPts+b.challengePts+b.bonusPts)-(a.teamPts+a.predPts+a.challengePts+a.bonusPts));
+  const overallSorted   = [...(participants||[])].sort((a,b)=>(b.teamPts+b.predPts+b.challengePts+b.bonusPts+(b.gloryRoadPts||0))-(a.teamPts+a.predPts+a.challengePts+a.bonusPts+(a.gloryRoadPts||0)));
   const underdogSorted  = [...(participants||[])].filter(p=>(p.portfolio||[]).find(pt=>pt.slot==="underdog")).sort((a,b)=>getUnderdogStage(b)-getUnderdogStage(a));
   const predictorSorted = [...(participants||[])].sort((a,b)=>predChalPts(b)-predChalPts(a));
 
@@ -979,7 +979,7 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
         {/* Col 1 — Overall Winner */}
         <PrizeLB
           title="OVERALL WINNER" icon="🏆" prize="R500 · highest total points"
-          data={overallSorted} getValue={p=>p.teamPts+p.predPts+p.challengePts+p.bonusPts}
+          data={overallSorted} getValue={p=>p.teamPts+p.predPts+p.challengePts+p.bonusPts+(p.gloryRoadPts||0)}
           color="#B8860B"
         />
 
@@ -1020,7 +1020,7 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
           {sorted.map((p,i) => {
             const medals = ["🥇","🥈","🥉"];
             const isMe   = p.name === user;
-            const total  = p.teamPts+p.predPts+p.challengePts+p.bonusPts;
+            const total  = p.teamPts+p.predPts+p.challengePts+p.bonusPts+(p.gloryRoadPts||0);
             return (
               <div key={p.name} className={"lbrow "+(isMe?"me":"")+(i===0?" top":"")} style={{ padding:"8px 12px" }}>
                 <div style={{ fontFamily:"var(--fd)", fontSize:i<3?20:14, width:32, textAlign:"center" }}>{i<3?medals[i]:i+1}</div>
@@ -1066,10 +1066,10 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
 // ─── LEADERBOARD ─────────────────────────────────────────────────
 function Leaderboard({ user, participants }) {
   const [expanded, setExpanded] = useState(null);
-  const sorted = [...(participants || [])].sort((a, b) => (b.teamPts + b.predPts + b.challengePts + b.bonusPts) - (a.teamPts + a.predPts + a.challengePts + a.bonusPts));
+  const sorted = [...(participants || [])].sort((a, b) => (b.teamPts + b.predPts + b.challengePts + b.bonusPts + (b.gloryRoadPts||0)) - (a.teamPts + a.predPts + a.challengePts + a.bonusPts + (a.gloryRoadPts||0)));
   const meIdx  = sorted.findIndex(p => p.name === user);
-  const me     = sorted[meIdx] || { name: user, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0 };
-  const myTotal = me.teamPts + me.predPts + me.challengePts + me.bonusPts;
+  const me     = sorted[meIdx] || { name: user, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, gloryRoadPts: 0 };
+  const myTotal = me.teamPts + me.predPts + me.challengePts + me.bonusPts + (me.gloryRoadPts||0);
 
   return (
     <div className="fade-in">
@@ -1093,7 +1093,7 @@ function Leaderboard({ user, participants }) {
         const medals  = ["🥇", "🥈", "🥉"];
         const isMe    = p.name === user;
         const isExp   = expanded === p.name;
-        const total   = p.teamPts + p.predPts + p.challengePts + p.bonusPts;
+        const total   = p.teamPts + p.predPts + p.challengePts + p.bonusPts + (p.gloryRoadPts||0);
         return (
           <div key={p.name}>
             <div className={"lbrow " + (isMe ? "me" : "") + (i === 0 ? " top" : "")} onClick={() => setExpanded(isExp ? null : p.name)}>
@@ -1102,7 +1102,7 @@ function Leaderboard({ user, participants }) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: 15 }}>{p.name}{isMe ? " (you)" : ""}</div>
                 <div style={{ display: "flex", gap: 12, marginTop: 3, flexWrap: "wrap" }}>
-                  {[["Teams", p.teamPts, "var(--coral)"], ["Preds", p.predPts, "var(--teal)"], ["Challenges", p.challengePts, "var(--purple)"]].map(([l, v, c]) => (
+                  {[["Teams", p.teamPts, "var(--coral)"], ["Preds", p.predPts, "var(--teal)"], ["Challenges", p.challengePts, "var(--purple)"], ...((p.gloryRoadPts||0) > 0 ? [["⭐ Glory", p.gloryRoadPts, "var(--yellow)"]] : [])].map(([l, v, c]) => (
                     <span key={l} style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700 }}>{l}: <span style={{ color: c }}>{v}</span></span>
                   ))}
                 </div>
@@ -1113,7 +1113,7 @@ function Leaderboard({ user, participants }) {
             {isExp && (
               <div className="card fade-in" style={{ margin: "0 0 10px", padding: "16px 20px" }}>
                 <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-                  {[["Team Pts", p.teamPts, "var(--coral)"], ["Pred Pts", p.predPts, "var(--teal)"], ["Challenge Pts", p.challengePts, "var(--purple)"], ["Bonus", p.bonusPts, "#FFB300"]].map(([l, v, c]) => (
+                  {[["Team Pts", p.teamPts, "var(--coral)"], ["Pred Pts", p.predPts, "var(--teal)"], ["Challenge Pts", p.challengePts, "var(--purple)"], ["Bonus", p.bonusPts, "#FFB300"], ["⭐ Glory Road", (p.gloryRoadPts||0), "var(--yellow)"]].map(([l, v, c]) => (
                     <div key={l}><div style={{ fontFamily: "var(--fd)", fontSize: 28, color: c }}>{v}</div><div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>{l}</div></div>
                   ))}
                   {p.portfolio && p.portfolio.length > 0 && (
@@ -1776,7 +1776,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     showToast({ title: "+" + pts + " pts! " + label, body: "Added to your challenge score" });
     const me = (participants || []).find(p => p.name === user);
     if (me) {
-      const total = me.teamPts + me.predPts + me.challengePts + me.bonusPts + pts;
+      const total = me.teamPts + me.predPts + me.challengePts + me.bonusPts + (me.gloryRoadPts||0) + pts;
       sendChat(String.fromCodePoint(128293) + " *" + user + " just completed a challenge!*\n*" + label + "* — scored *" + pts + " pts*\n" + user + "'s total is now *" + total + " pts*");
     }
     reset();
@@ -2257,6 +2257,310 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
   );
 }
 
+// ─── GLORY ROAD SCORING PANELS ───────────────────────────────────
+
+function GloryRoadScoringPanel({ matchId, label, match, matchPreds, participants, isTbd, showToast, onAwarded }) {
+  const homeId = match?.home_id || "tbd";
+  const awayId = match?.away_id || "tbd";
+  const [actualHome,    setActualHome]    = useState("");
+  const [actualAway,    setActualAway]    = useState("");
+  const [firstTeam,     setFirstTeam]     = useState("");
+  const [wentToPens,    setWentToPens]    = useState(false);
+  const [preview,       setPreview]       = useState(null);
+  const [awarding,      setAwarding]      = useState(false);
+  const [awarded,       setAwarded]       = useState(false);
+  const [alreadyDone,   setAlreadyDone]   = useState(false);
+  const [checkingLog,   setCheckingLog]   = useState(true);
+
+  // Guard: check points_log on mount — if already awarded, lock the panel
+  React.useEffect(() => {
+    const check = async () => {
+      const logs = await sbGet("points_log", "reason=eq.Glory Road: " + encodeURIComponent(label + " Golden Ticket") + "&limit=1");
+      if (logs && logs.length > 0) setAlreadyDone(true);
+      setCheckingLog(false);
+    };
+    check();
+  }, [matchId]);
+
+
+  const calcPoints = () => {
+    if (actualHome === "" || actualAway === "") { showToast("⚠️ Enter the actual score first"); return; }
+    const h = parseInt(actualHome);
+    const a = parseInt(actualAway);
+    const results = participants.map(p => {
+      const pred = matchPreds.find(x => x.user_id === p.id?.toLowerCase());
+      if (!pred) return { name: p.name, userId: p.id?.toLowerCase(), pts: 0, scoreCorrect: false, teamCorrect: false, pensCorrect: false, noPred: true };
+      const scoreCorrect = pred.home_score === h && pred.away_score === a;
+      const teamCorrect  = firstTeam && pred.first_scoring_team === firstTeam;
+      const pensCorrect  = pred.goes_to_extra_time === wentToPens;
+      const pts = (scoreCorrect ? 30 : 0) + (teamCorrect ? 20 : 0) + (pensCorrect ? 20 : 0);
+      return { name: p.name, userId: p.id?.toLowerCase(), pts, scoreCorrect, teamCorrect, pensCorrect, noPred: false };
+    });
+    setPreview(results);
+  };
+
+  const awardPoints = async () => {
+    if (!preview) return;
+    setAwarding(true);
+    for (const r of preview) {
+      if (r.noPred || r.pts === 0) continue;
+      const current = participants.find(p => p.id?.toLowerCase() === r.userId);
+      const currentGlory = current?.gloryRoadPts || 0;
+      await sbUpdate("participants", "id=eq." + r.userId, { glory_road_pts: currentGlory + r.pts });
+      await sbInsert("points_log", {
+        user_id: r.userId,
+        pts: r.pts,
+        reason: "Glory Road: " + label + " Golden Ticket",
+        created_at: new Date().toISOString(),
+      });
+    }
+    setAwarded(true);
+    setAwarding(false);
+    showToast("✅ Glory Road points awarded for " + label + "!");
+    if (onAwarded) onAwarded();
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div style={{ fontFamily: "var(--fd)", fontSize: 16, color: "var(--navy)", marginBottom: 14 }}>
+        ⚽ {label.toUpperCase()} — SCORE & AWARD
+      </div>
+
+      {checkingLog ? (
+        <div style={{ color: "var(--muted)", fontWeight: 700, fontSize: 13, padding: "12px 0" }}>Checking award status...</div>
+      ) : alreadyDone ? (
+        <div style={{ background: "rgba(0,200,83,.1)", borderRadius: 12, padding: "14px 16px", color: "#00A152", fontWeight: 800, fontSize: 14, textAlign: "center" }}>
+          ✅ Points already awarded for {label} — cannot award twice
+        </div>
+      ) : isTbd ? (
+        <div style={{ color: "var(--muted)", fontWeight: 700, fontSize: 13, padding: "12px 0" }}>⏳ Teams not confirmed yet — available once match is set</div>
+      ) : awarded ? (
+        <div style={{ background: "rgba(0,200,83,.1)", borderRadius: 12, padding: "14px 16px", color: "#00A152", fontWeight: 800, fontSize: 14, textAlign: "center" }}>
+          ✅ Points awarded for {label}!
+        </div>
+      ) : (
+        <div>
+          {/* Match header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, padding: "12px 16px", background: "var(--bg)", borderRadius: 12 }}>
+            <Flag code={homeId} size={28} />
+            <span style={{ fontWeight: 800, fontSize: 13 }}>{homeId.toUpperCase()}</span>
+            <span style={{ fontFamily: "var(--fd)", color: "var(--coral)", fontSize: 16 }}>VS</span>
+            <span style={{ fontWeight: 800, fontSize: 13 }}>{awayId.toUpperCase()}</span>
+            <Flag code={awayId} size={28} />
+          </div>
+
+          {/* Actual score input */}
+          <div className="aform">
+            <label>Actual Score</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 10, color: "var(--muted)", fontWeight: 800 }}>{homeId.toUpperCase()}</label>
+                <input type="number" min="0" max="20" placeholder="0" value={actualHome} onChange={e => { setActualHome(e.target.value); setPreview(null); }} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 20, fontWeight: 900, textAlign: "center", fontFamily: "var(--fd)", outline: "none" }} />
+              </div>
+              <div style={{ fontFamily: "var(--fd)", fontSize: 24, color: "var(--muted)", paddingTop: 16 }}>–</div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 10, color: "var(--muted)", fontWeight: 800 }}>{awayId.toUpperCase()}</label>
+                <input type="number" min="0" max="20" placeholder="0" value={actualAway} onChange={e => { setActualAway(e.target.value); setPreview(null); }} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 20, fontWeight: 900, textAlign: "center", fontFamily: "var(--fd)", outline: "none" }} />
+              </div>
+            </div>
+
+            {/* First team to score */}
+            <label>First Team to Score</label>
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              {[homeId, awayId].map(tid => (
+                <button key={tid} onClick={() => { setFirstTeam(tid); setPreview(null); }} style={{ flex: 1, padding: "10px", borderRadius: 12, border: "2px solid " + (firstTeam === tid ? "var(--teal)" : "var(--border)"), background: firstTeam === tid ? "rgba(0,191,165,.1)" : "var(--bg)", fontWeight: 800, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, color: firstTeam === tid ? "var(--teal)" : "var(--navy)" }}>
+                  <Flag code={tid} size={20} /> {tid.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            {/* Penalties toggle */}
+            <label>Went to Extra Time / Penalties?</label>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              {[[false, "⚽ No — Normal Time"], [true, "🥊 Yes — Extra Time/Pens"]].map(([val, lbl]) => (
+                <button key={String(val)} onClick={() => { setWentToPens(val); setPreview(null); }} style={{ flex: 1, padding: "10px", borderRadius: 12, border: "2px solid " + (wentToPens === val ? "var(--teal)" : "var(--border)"), background: wentToPens === val ? "rgba(0,191,165,.1)" : "var(--bg)", fontWeight: 800, fontSize: 12, cursor: "pointer", color: wentToPens === val ? "var(--teal)" : "var(--navy)" }}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Calculate button */}
+          {!preview && (
+            <button onClick={calcPoints} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "none", background: "var(--navy)", color: "#fff", fontFamily: "var(--fd)", fontSize: 14, letterSpacing: 1, cursor: "pointer" }}>
+              🔍 CALCULATE POINTS
+            </button>
+          )}
+
+          {/* Preview table */}
+          {preview && (
+            <div>
+              <div style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--navy)", marginBottom: 10 }}>POINTS PREVIEW</div>
+              <div style={{ borderRadius: 12, overflow: "hidden", border: "2px solid var(--border)", marginBottom: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", background: "var(--navy)", padding: "8px 14px", gap: 8 }}>
+                  {["Participant", "Score 30", "1st Team 20", "Pens 20", "Total"].map((h, i) => (
+                    <div key={i} style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.6)", textTransform: "uppercase" }}>{h}</div>
+                  ))}
+                </div>
+                {preview.map(r => (
+                  <div key={r.name} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "10px 14px", gap: 8, alignItems: "center", borderTop: "1px solid var(--border)", background: r.pts > 0 ? "rgba(0,200,83,.04)" : "#fff" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Avatar name={r.name} size={24} /><span style={{ fontWeight: 800, fontSize: 12 }}>{r.name}</span></div>
+                    <div style={{ textAlign: "center" }}>{r.noPred ? <span style={{ color: "var(--muted)", fontSize: 11 }}>no pred</span> : r.scoreCorrect ? <span style={{ color: "#00A152", fontWeight: 800 }}>✅ +30</span> : <span style={{ color: "var(--muted)" }}>❌</span>}</div>
+                    <div style={{ textAlign: "center" }}>{r.noPred ? "—" : r.teamCorrect ? <span style={{ color: "#00A152", fontWeight: 800 }}>✅ +20</span> : <span style={{ color: "var(--muted)" }}>❌</span>}</div>
+                    <div style={{ textAlign: "center" }}>{r.noPred ? "—" : r.pensCorrect ? <span style={{ color: "#00A152", fontWeight: 800 }}>✅ +20</span> : <span style={{ color: "var(--muted)" }}>❌</span>}</div>
+                    <div style={{ textAlign: "center", fontFamily: "var(--fd)", fontSize: 18, color: r.pts > 0 ? "var(--coral)" : "var(--muted)" }}>{r.pts > 0 ? "+" + r.pts : "0"}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setPreview(null)} style={{ flex: 1, padding: "12px", borderRadius: 12, border: "2px solid var(--border)", background: "var(--bg)", fontWeight: 800, fontSize: 13, cursor: "pointer", color: "var(--muted)" }}>
+                  ✏️ Edit
+                </button>
+                <button onClick={awardPoints} disabled={awarding} style={{ flex: 2, padding: "12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#00BFA5,#00897B)", color: "#fff", fontFamily: "var(--fd)", fontSize: 14, letterSpacing: 1, cursor: "pointer", opacity: awarding ? 0.6 : 1 }}>
+                  {awarding ? "AWARDING..." : "🏆 AWARD POINTS"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GloryRoadBracketPanel({ grPreds, participants, showToast }) {
+  const [finalist1,   setFinalist1]   = useState("");
+  const [finalist2,   setFinalist2]   = useState("");
+  const [preview,     setPreview]     = useState(null);
+  const [awarding,    setAwarding]    = useState(false);
+  const [awarded,     setAwarded]     = useState(false);
+  const [alreadyDone, setAlreadyDone] = useState(false);
+  const [checkingLog, setCheckingLog] = useState(true);
+
+  // Guard: check points_log on mount
+  React.useEffect(() => {
+    const check = async () => {
+      const logs = await sbGet("points_log", "reason=eq.Glory Road: Final Bracket&limit=1");
+      if (logs && logs.length > 0) setAlreadyDone(true);
+      setCheckingLog(false);
+    };
+    check();
+  }, []);
+
+  const calcPoints = () => {
+    if (!finalist1 || !finalist2) { showToast("⚠️ Enter both finalists first"); return; }
+    const results = participants.map(p => {
+      const pred = grPreds.find(x => x.user_id === p.id?.toLowerCase() && x.prediction_type === "bracket");
+      if (!pred) return { name: p.name, userId: p.id?.toLowerCase(), pts: 0, noPred: true };
+      const got1 = pred.finalist_1 === finalist1 || pred.finalist_1 === finalist2;
+      const got2 = pred.finalist_2 === finalist1 || pred.finalist_2 === finalist2;
+      const pts  = (got1 && got2) ? 100 : (got1 || got2) ? 50 : 0;
+      return { name: p.name, userId: p.id?.toLowerCase(), pts, bothCorrect: got1 && got2, oneCorrect: (got1 || got2) && !(got1 && got2), noPred: false, pick1: pred.finalist_1, pick2: pred.finalist_2 };
+    });
+    setPreview(results);
+  };
+
+  const awardPoints = async () => {
+    if (!preview) return;
+    setAwarding(true);
+    for (const r of preview) {
+      if (r.noPred || r.pts === 0) continue;
+      const current = participants.find(p => p.id?.toLowerCase() === r.userId);
+      const currentGlory = current?.gloryRoadPts || 0;
+      await sbUpdate("participants", "id=eq." + r.userId, { glory_road_pts: currentGlory + r.pts });
+      await sbInsert("points_log", {
+        user_id: r.userId,
+        pts: r.pts,
+        reason: "Glory Road: Final Bracket",
+        created_at: new Date().toISOString(),
+      });
+    }
+    setAwarded(true);
+    setAwarding(false);
+    showToast("✅ Bracket points awarded!");
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div style={{ fontFamily: "var(--fd)", fontSize: 16, color: "var(--navy)", marginBottom: 14 }}>
+        🎯 FINAL BRACKET — SCORE & AWARD
+      </div>
+
+      {checkingLog ? (
+        <div style={{ color: "var(--muted)", fontWeight: 700, fontSize: 13, padding: "12px 0" }}>Checking award status...</div>
+      ) : alreadyDone ? (
+        <div style={{ background: "rgba(0,200,83,.1)", borderRadius: 12, padding: "14px 16px", color: "#00A152", fontWeight: 800, fontSize: 14, textAlign: "center" }}>
+          ✅ Bracket points already awarded — cannot award twice
+        </div>
+      ) : awarded ? (
+        <div style={{ background: "rgba(0,200,83,.1)", borderRadius: 12, padding: "14px 16px", color: "#00A152", fontWeight: 800, fontSize: 14, textAlign: "center" }}>
+          ✅ Bracket points awarded!
+        </div>
+      ) : (
+        <div>
+          <div className="aform">
+            <label>Finalist 1 (team ID e.g. fra, eng, spa)</label>
+            <input className="aform" placeholder="e.g. fra" value={finalist1} onChange={e => { setFinalist1(e.target.value.toLowerCase().trim()); setPreview(null); }} style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 14, fontWeight: 700, outline: "none", marginBottom: 12 }} />
+            <label>Finalist 2 (team ID e.g. fra, eng, spa)</label>
+            <input className="aform" placeholder="e.g. eng" value={finalist2} onChange={e => { setFinalist2(e.target.value.toLowerCase().trim()); setPreview(null); }} style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 14, fontWeight: 700, outline: "none", marginBottom: 12 }} />
+          </div>
+
+          {finalist1 && finalist2 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "rgba(0,191,165,.08)", borderRadius: 10, marginBottom: 14 }}>
+              <Flag code={finalist1} size={24} />
+              <span style={{ fontWeight: 800 }}>{finalist1.toUpperCase()}</span>
+              <span style={{ fontFamily: "var(--fd)", color: "var(--coral)" }}>vs</span>
+              <Flag code={finalist2} size={24} />
+              <span style={{ fontWeight: 800 }}>{finalist2.toUpperCase()}</span>
+            </div>
+          )}
+
+          {!preview && (
+            <button onClick={calcPoints} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "none", background: "var(--navy)", color: "#fff", fontFamily: "var(--fd)", fontSize: 14, letterSpacing: 1, cursor: "pointer" }}>
+              🔍 CALCULATE BRACKET POINTS
+            </button>
+          )}
+
+          {preview && (
+            <div>
+              <div style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--navy)", marginBottom: 10 }}>BRACKET POINTS PREVIEW</div>
+              <div style={{ borderRadius: 12, overflow: "hidden", border: "2px solid var(--border)", marginBottom: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", background: "var(--navy)", padding: "8px 14px", gap: 8 }}>
+                  {["Participant", "Their Pick", "Result", "Points"].map((h, i) => (
+                    <div key={i} style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.6)", textTransform: "uppercase" }}>{h}</div>
+                  ))}
+                </div>
+                {preview.map(r => (
+                  <div key={r.name} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "10px 14px", gap: 8, alignItems: "center", borderTop: "1px solid var(--border)", background: r.pts > 0 ? "rgba(0,200,83,.04)" : "#fff" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Avatar name={r.name} size={24} /><span style={{ fontWeight: 800, fontSize: 12 }}>{r.name}</span></div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      {r.noPred ? <span style={{ color: "var(--muted)", fontSize: 11 }}>no pred</span> : <><Flag code={r.pick1} size={16} /><span style={{ fontSize: 11, fontWeight: 700 }}>{r.pick1?.toUpperCase()}</span><span style={{ color: "var(--muted)", fontSize: 10, margin: "0 2px" }}>vs</span><Flag code={r.pick2} size={16} /><span style={{ fontSize: 11, fontWeight: 700 }}>{r.pick2?.toUpperCase()}</span></>}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 800 }}>
+                      {r.noPred ? "—" : r.bothCorrect ? <span style={{ color: "#00A152" }}>✅ Both</span> : r.oneCorrect ? <span style={{ color: "#FFB300" }}>⚡ One</span> : <span style={{ color: "var(--muted)" }}>❌ None</span>}
+                    </div>
+                    <div style={{ textAlign: "center", fontFamily: "var(--fd)", fontSize: 18, color: r.pts > 0 ? "var(--coral)" : "var(--muted)" }}>{r.pts > 0 ? "+" + r.pts : "0"}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setPreview(null)} style={{ flex: 1, padding: "12px", borderRadius: 12, border: "2px solid var(--border)", background: "var(--bg)", fontWeight: 800, fontSize: 13, cursor: "pointer", color: "var(--muted)" }}>
+                  ✏️ Edit
+                </button>
+                <button onClick={awardPoints} disabled={awarding} style={{ flex: 2, padding: "12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#00BFA5,#00897B)", color: "#fff", fontFamily: "var(--fd)", fontSize: 14, letterSpacing: 1, cursor: "pointer", opacity: awarding ? 0.6 : 1 }}>
+                  {awarding ? "AWARDING..." : "🏆 AWARD BRACKET POINTS"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── ADMIN PANEL ─────────────────────────────────────────────────
 function AdminPanel({ user, participants, matches, showToast, onRecordResult, onAwardBonus, onAdvanceTeam }) {
   const [tab, setTab] = useState("overview");
@@ -2269,7 +2573,7 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
   const [grPreds, setGrPreds] = useState([]);
   const [grLoaded, setGrLoaded] = useState(false);
   const [grScoring, setGrScoring] = useState({ userId: "", matchId: "", pts: "", reason: "" });
-  const sorted = [...(participants || [])].sort((a, b) => (b.teamPts + b.predPts + b.challengePts + b.bonusPts) - (a.teamPts + a.predPts + a.challengePts + a.bonusPts));
+  const sorted = [...(participants || [])].sort((a, b) => (b.teamPts + b.predPts + b.challengePts + b.bonusPts + (b.gloryRoadPts||0)) - (a.teamPts + a.predPts + a.challengePts + a.bonusPts + (a.gloryRoadPts||0)));
   const openMatches = (matches || []).filter(m => m.status === "open");
 
   useEffect(() => {
@@ -2607,7 +2911,7 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
 
           <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 14 }}>PARTICIPANT STATUS</div>
           {sorted.map(p => {
-            const total = p.teamPts + p.predPts + p.challengePts + p.bonusPts;
+            const total = p.teamPts + p.predPts + p.challengePts + p.bonusPts + (p.gloryRoadPts||0);
             return (
               <div key={p.name} className="card" style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <Avatar name={p.name} size={44} />
@@ -2645,21 +2949,50 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
         <div className="fade-in">
           <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 4 }}>⭐ GLORY ROAD — ADMIN SCORING</div>
           <div style={{ padding: "11px 16px", background: "rgba(255,214,0,.08)", borderRadius: 12, border: "1.5px solid rgba(255,214,0,.3)", fontSize: 13, color: "#664400", fontWeight: 700, marginBottom: 20 }}>
-            Review all special predictions below. Award points manually via the Bonus tab — use the reason field to reference "Glory Road: SF1 Scoreline" etc. for the audit trail.
+            Enter the actual result for each match, then click Score & Award. Points are calculated automatically and written directly to glory_road_pts — separate from bonus points.
           </div>
 
           {!grLoaded ? (
             <div className="card" style={{ textAlign: "center", padding: 30, color: "var(--muted)", fontWeight: 700 }}>Loading predictions...</div>
-          ) : grPreds.length === 0 ? (
-            <div className="card" style={{ textAlign: "center", padding: 30 }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
-              <div style={{ fontWeight: 800, color: "var(--navy)", marginBottom: 4 }}>No submissions yet</div>
-              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>Participants haven't submitted Glory Road predictions yet</div>
-            </div>
           ) : (
             <div>
-              {/* BRACKET PREDICTIONS */}
-              <div style={{ fontFamily: "var(--fd)", fontSize: 16, color: "var(--navy)", marginBottom: 12, marginTop: 4 }}>🎯 FINAL BRACKET PICKS</div>
+
+              {/* ── SCORING PANELS ── */}
+              {["sf_01", "sf_02", "final_01"].map(matchId => {
+                const label = matchId === "sf_01" ? "Semi Final 1" : matchId === "sf_02" ? "Semi Final 2" : "The Final";
+                const match = matches.find(m => m.id === matchId);
+                const matchPreds = grPreds.filter(x => x.match_id === matchId && x.prediction_type === "golden_ticket");
+                const homeId = match?.home_id || "tbd";
+                const awayId = match?.away_id || "tbd";
+                const isTbd = homeId === "tbd" || awayId === "tbd";
+
+                return (
+                  <GloryRoadScoringPanel
+                    key={matchId}
+                    matchId={matchId}
+                    label={label}
+                    match={match}
+                    matchPreds={matchPreds}
+                    participants={participants}
+                    isTbd={isTbd}
+                    showToast={showToast}
+                    onAwarded={() => sbGet("special_predictions").then(data => setGrPreds(data || []))}
+                  />
+                );
+              })}
+
+              {/* ── BRACKET SCORING PANEL ── */}
+              <GloryRoadBracketPanel
+                grPreds={grPreds}
+                participants={participants}
+                showToast={showToast}
+              />
+
+              {/* ── PREDICTIONS VIEWER ── */}
+              <div style={{ fontFamily: "var(--fd)", fontSize: 16, color: "var(--navy)", marginBottom: 12, marginTop: 24 }}>📋 ALL SUBMISSIONS — READ ONLY</div>
+
+              {/* Bracket picks */}
+              <div style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--navy)", marginBottom: 8 }}>🎯 FINAL BRACKET PICKS</div>
               <div className="card" style={{ marginBottom: 20, padding: 0, overflow: "hidden" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: "var(--navy)", padding: "10px 16px", gap: 8 }}>
                   {["Participant", "Finalist 1", "Finalist 2"].map((h, i) => (
@@ -2682,65 +3015,44 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
                 })}
               </div>
 
-              {/* GOLDEN TICKET PREDICTIONS */}
+              {/* Golden ticket submissions */}
               {["sf_01", "sf_02", "final_01"].map(matchId => {
                 const label = matchId === "sf_01" ? "Semi Final 1" : matchId === "sf_02" ? "Semi Final 2" : "The Final";
                 const match = matches.find(m => m.id === matchId);
                 const matchPreds = grPreds.filter(x => x.match_id === matchId && x.prediction_type === "golden_ticket");
-                if (matchPreds.length === 0 && match?.status !== "completed") return null;
+                if (matchPreds.length === 0) return null;
                 return (
-                  <div key={matchId}>
-                    <div style={{ fontFamily: "var(--fd)", fontSize: 16, color: "var(--navy)", marginBottom: 12, marginTop: 16 }}>
-                      ⚽ {label.toUpperCase()} GOLDEN TICKETS
-                      {match && match.home_id !== "tbd" && (
-                        <span style={{ fontSize: 13, fontFamily: "var(--fb)", color: "var(--muted)", marginLeft: 8, fontWeight: 700 }}>
-                          {match.home_id.toUpperCase()} vs {match.away_id.toUpperCase()}
-                          {match.status === "completed" && ` — ${match.home_score}-${match.away_score}`}
-                        </span>
-                      )}
+                  <div key={matchId} style={{ marginBottom: 20 }}>
+                    <div style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--navy)", marginBottom: 8 }}>
+                      ⚽ {label.toUpperCase()}
+                      {match?.home_id !== "tbd" && <span style={{ fontSize: 12, fontFamily: "var(--fb)", color: "var(--muted)", marginLeft: 8, fontWeight: 700 }}>{match.home_id?.toUpperCase()} vs {match.away_id?.toUpperCase()}</span>}
                     </div>
-                    {matchPreds.length === 0 ? (
-                      <div className="card" style={{ marginBottom: 16, textAlign: "center", padding: 20, color: "var(--muted)", fontWeight: 700, fontSize: 13 }}>No submissions yet for {label}</div>
-                    ) : (
-                      <div className="card" style={{ marginBottom: 20, padding: 0, overflow: "hidden" }}>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", background: "var(--navy)", padding: "10px 16px", gap: 8 }}>
-                          {["Participant", "Score", "First to Score", "Pens/ET"].map((h, i) => (
-                            <div key={i} style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.6)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</div>
-                          ))}
-                        </div>
-                        {participants.map(p => {
-                          const pred = matchPreds.find(x => x.user_id === p.id?.toLowerCase());
-                          return (
-                            <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "12px 16px", gap: 8, alignItems: "center", borderTop: "1px solid var(--border)" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Avatar name={p.name} size={28} /><span style={{ fontWeight: 800, fontSize: 13 }}>{p.name}</span></div>
-                              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--navy)" }}>
-                                {pred ? `${pred.home_score}-${pred.away_score}` : <span style={{ color: "var(--muted)" }}>—</span>}
-                              </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                {pred?.first_scoring_team
-                                  ? <><Flag code={pred.first_scoring_team} size={18} /><span style={{ fontSize: 12, fontWeight: 700 }}>{pred.first_scoring_team.toUpperCase()}</span></>
-                                  : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>}
-                              </div>
-                              <div>
-                                {pred ? (
-                                  <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 20, background: pred.goes_to_extra_time ? "rgba(255,107,53,.1)" : "rgba(0,191,165,.1)", color: pred.goes_to_extra_time ? "var(--coral)" : "var(--teal)" }}>
-                                    {pred.goes_to_extra_time ? "YES" : "NO"}
-                                  </span>
-                                ) : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>}
-                              </div>
-                            </div>
-                          );
-                        })}
+                    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", background: "var(--navy)", padding: "10px 16px", gap: 8 }}>
+                        {["Participant", "Score", "First to Score", "Pens/ET"].map((h, i) => (
+                          <div key={i} style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.6)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</div>
+                        ))}
                       </div>
-                    )}
+                      {participants.map(p => {
+                        const pred = matchPreds.find(x => x.user_id === p.id?.toLowerCase());
+                        return (
+                          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "12px 16px", gap: 8, alignItems: "center", borderTop: "1px solid var(--border)" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Avatar name={p.name} size={28} /><span style={{ fontWeight: 800, fontSize: 13 }}>{p.name}</span></div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--navy)" }}>{pred ? `${pred.home_score}-${pred.away_score}` : <span style={{ color: "var(--muted)" }}>—</span>}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              {pred?.first_scoring_team ? <><Flag code={pred.first_scoring_team} size={18} /><span style={{ fontSize: 12, fontWeight: 700 }}>{pred.first_scoring_team.toUpperCase()}</span></> : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>}
+                            </div>
+                            <div>
+                              {pred ? <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 20, background: pred.goes_to_extra_time ? "rgba(255,107,53,.1)" : "rgba(0,191,165,.1)", color: pred.goes_to_extra_time ? "var(--coral)" : "var(--teal)" }}>{pred.goes_to_extra_time ? "YES" : "NO"}</span> : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
 
-              {/* QUICK AWARD REMINDER */}
-              <div style={{ padding: "14px 18px", background: "rgba(124,77,255,.06)", borderRadius: 14, border: "1.5px solid rgba(124,77,255,.2)", fontSize: 13, color: "var(--purple)", fontWeight: 700, marginTop: 8 }}>
-                💡 To award points: go to the <strong>🎁 Bonus tab</strong> → select the participant → enter the points and reason (e.g. "Glory Road: SF1 exact score"). This keeps the full audit trail in the points log.
-              </div>
             </div>
           )}
         </div>
@@ -3259,7 +3571,7 @@ export default function App() {
     try { return !localStorage.getItem("wc2026_howto_seen"); } catch(e) { return true; }
   });
   const [toast,        setToast]       = useState(null);
-  const [participants, setParticipants]= useState(PEOPLE.map(name => ({ name, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, portfolio: [] })));
+  const [participants, setParticipants]= useState(PEOPLE.map(name => ({ name, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, gloryRoadPts: 0, portfolio: [] })));
   const [matches,      setMatches]     = useState([]);
   const [predictions,  setPredictions] = useState({});
   const [claimedTeams, setClaimedTeams]= useState({ contenders: [], underdogs: [] });
@@ -3280,8 +3592,8 @@ export default function App() {
             // Match by both id (lowercase) and name to handle inconsistency
             const db = dbP.find(d => d && (d.name === name || d.id === name.toLowerCase()));
             return db
-              ? { name, teamPts: db.team_pts || 0, predPts: db.pred_pts || 0, challengePts: db.challenge_pts || 0, bonusPts: db.bonus_pts || 0, portfolio: [] }
-              : { name, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, portfolio: [] };
+              ? { name, teamPts: db.team_pts || 0, predPts: db.pred_pts || 0, challengePts: db.challenge_pts || 0, bonusPts: db.bonus_pts || 0, gloryRoadPts: db.glory_road_pts || 0, portfolio: [] }
+              : { name, teamPts: 0, predPts: 0, challengePts: 0, bonusPts: 0, gloryRoadPts: 0, portfolio: [] };
           });
           setParticipants(merged);
         }
@@ -3366,7 +3678,7 @@ export default function App() {
           setParticipants(prev => prev.map(p => {
             const db   = dbP.find(d => d && (d.name === p.name || d.id === p.name.toLowerCase()));
             const port = (dbPort||[]).filter(pt => pt && pt.user_id === p.name.toLowerCase()).map(pt => ({ team: pt.team_id, slot: pt.slot_type, stage: pt.current_stage || "Group Stage", won: pt.won_stages || [], eliminated: pt.eliminated || false }));
-            return db ? { ...p, teamPts: db.team_pts||0, predPts: db.pred_pts||0, challengePts: db.challenge_pts||0, bonusPts: db.bonus_pts||0, portfolio: port.length > 0 ? port : p.portfolio } : p;
+            return db ? { ...p, teamPts: db.team_pts||0, predPts: db.pred_pts||0, challengePts: db.challenge_pts||0, bonusPts: db.bonus_pts||0, gloryRoadPts: db.glory_road_pts||0, portfolio: port.length > 0 ? port : p.portfolio } : p;
           }));
           // Update claimed teams
           if (dbPort && dbPort.length > 0) {
