@@ -3203,12 +3203,12 @@ function Knockout({ user, matches, participants, showToast }) {
       <style>{KNOCKOUT_CSS}</style>
       <div className="phead">
         <div className="ptitle">⭐ Glory Road</div>
-        <div className="psub">Semi Finals · Final · Special Predictions — up to 440 bonus points</div>
+        <div className="psub">Semi Finals · Final · Special Predictions — up to 310 bonus points</div>
       </div>
       <div className="ko-hero">
         <div className="ko-hero-title">THE BUSINESS END</div>
         <div className="ko-hero-sub">Every prediction counts more from here. Pick your finalists, nail the scoreline, call which team scores first.</div>
-        <div className="ko-pts-pill">⭐ Up to 440 bonus points available</div>
+        <div className="ko-pts-pill">⭐ Up to 310 bonus points available</div>
       </div>
       <div className="ko-tab-row">
         {tabs.map(t => (
