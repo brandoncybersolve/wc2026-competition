@@ -2266,6 +2266,9 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
   const [allPreds,  setAllPreds]  = useState([]);
   const [allComps,  setAllComps]  = useState([]);
   const [predsLoaded, setPredsLoaded] = useState(false);
+  const [grPreds, setGrPreds] = useState([]);
+  const [grLoaded, setGrLoaded] = useState(false);
+  const [grScoring, setGrScoring] = useState({ userId: "", matchId: "", pts: "", reason: "" });
   const sorted = [...(participants || [])].sort((a, b) => (b.teamPts + b.predPts + b.challengePts + b.bonusPts) - (a.teamPts + a.predPts + a.challengePts + a.bonusPts));
   const openMatches = (matches || []).filter(m => m.status === "open");
 
@@ -2325,8 +2328,13 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
       </div>
 
       <div className="tabs">
-        {[["overview", "📊 Overview"], ["matches", "⚽ Matches"], ["stages", "🏆 Stages"], ["bonus", "🎁 Bonus"], ["participants", "👥 Participants"]].map(([k, l]) => (
-          <div key={k} className={"tab " + (tab === k ? "on" : "")} onClick={() => setTab(k)}>{l}</div>
+        {[["overview", "📊 Overview"], ["matches", "⚽ Matches"], ["stages", "🏆 Stages"], ["bonus", "🎁 Bonus"], ["participants", "👥 Participants"], ["gloryroad", "⭐ Glory Road"]].map(([k, l]) => (
+          <div key={k} className={"tab " + (tab === k ? "on" : "")} onClick={() => {
+            setTab(k);
+            if (k === "gloryroad" && !grLoaded) {
+              sbGet("special_predictions").then(data => { setGrPreds(data || []); setGrLoaded(true); });
+            }
+          }}>{l}</div>
         ))}
       </div>
 
@@ -2632,6 +2640,111 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
           })}
         </div>
       )}
+      {/* ── GLORY ROAD ADMIN ── */}
+      {tab === "gloryroad" && (
+        <div className="fade-in">
+          <div style={{ fontFamily: "var(--fd)", fontSize: 22, color: "var(--navy)", marginBottom: 4 }}>⭐ GLORY ROAD — ADMIN SCORING</div>
+          <div style={{ padding: "11px 16px", background: "rgba(255,214,0,.08)", borderRadius: 12, border: "1.5px solid rgba(255,214,0,.3)", fontSize: 13, color: "#664400", fontWeight: 700, marginBottom: 20 }}>
+            Review all special predictions below. Award points manually via the Bonus tab — use the reason field to reference "Glory Road: SF1 Scoreline" etc. for the audit trail.
+          </div>
+
+          {!grLoaded ? (
+            <div className="card" style={{ textAlign: "center", padding: 30, color: "var(--muted)", fontWeight: 700 }}>Loading predictions...</div>
+          ) : grPreds.length === 0 ? (
+            <div className="card" style={{ textAlign: "center", padding: 30 }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
+              <div style={{ fontWeight: 800, color: "var(--navy)", marginBottom: 4 }}>No submissions yet</div>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>Participants haven't submitted Glory Road predictions yet</div>
+            </div>
+          ) : (
+            <div>
+              {/* BRACKET PREDICTIONS */}
+              <div style={{ fontFamily: "var(--fd)", fontSize: 16, color: "var(--navy)", marginBottom: 12, marginTop: 4 }}>🎯 FINAL BRACKET PICKS</div>
+              <div className="card" style={{ marginBottom: 20, padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: "var(--navy)", padding: "10px 16px", gap: 8 }}>
+                  {["Participant", "Finalist 1", "Finalist 2"].map((h, i) => (
+                    <div key={i} style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.6)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</div>
+                  ))}
+                </div>
+                {participants.map(p => {
+                  const pred = grPreds.find(x => x.user_id === p.id?.toLowerCase() && x.prediction_type === "bracket");
+                  return (
+                    <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", padding: "12px 16px", gap: 8, alignItems: "center", borderTop: "1px solid var(--border)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Avatar name={p.name} size={28} /><span style={{ fontWeight: 800, fontSize: 13 }}>{p.name}</span></div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {pred?.finalist_1 ? <><Flag code={pred.finalist_1} size={20} /><span style={{ fontSize: 12, fontWeight: 700 }}>{pred.finalist_1.toUpperCase()}</span></> : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {pred?.finalist_2 ? <><Flag code={pred.finalist_2} size={20} /><span style={{ fontSize: 12, fontWeight: 700 }}>{pred.finalist_2.toUpperCase()}</span></> : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* GOLDEN TICKET PREDICTIONS */}
+              {["sf_01", "sf_02", "final_01"].map(matchId => {
+                const label = matchId === "sf_01" ? "Semi Final 1" : matchId === "sf_02" ? "Semi Final 2" : "The Final";
+                const match = matches.find(m => m.id === matchId);
+                const matchPreds = grPreds.filter(x => x.match_id === matchId && x.prediction_type === "golden_ticket");
+                if (matchPreds.length === 0 && match?.status !== "completed") return null;
+                return (
+                  <div key={matchId}>
+                    <div style={{ fontFamily: "var(--fd)", fontSize: 16, color: "var(--navy)", marginBottom: 12, marginTop: 16 }}>
+                      ⚽ {label.toUpperCase()} GOLDEN TICKETS
+                      {match && match.home_id !== "tbd" && (
+                        <span style={{ fontSize: 13, fontFamily: "var(--fb)", color: "var(--muted)", marginLeft: 8, fontWeight: 700 }}>
+                          {match.home_id.toUpperCase()} vs {match.away_id.toUpperCase()}
+                          {match.status === "completed" && ` — ${match.home_score}-${match.away_score}`}
+                        </span>
+                      )}
+                    </div>
+                    {matchPreds.length === 0 ? (
+                      <div className="card" style={{ marginBottom: 16, textAlign: "center", padding: 20, color: "var(--muted)", fontWeight: 700, fontSize: 13 }}>No submissions yet for {label}</div>
+                    ) : (
+                      <div className="card" style={{ marginBottom: 20, padding: 0, overflow: "hidden" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", background: "var(--navy)", padding: "10px 16px", gap: 8 }}>
+                          {["Participant", "Score", "First to Score", "Pens/ET"].map((h, i) => (
+                            <div key={i} style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.6)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</div>
+                          ))}
+                        </div>
+                        {participants.map(p => {
+                          const pred = matchPreds.find(x => x.user_id === p.id?.toLowerCase());
+                          return (
+                            <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "12px 16px", gap: 8, alignItems: "center", borderTop: "1px solid var(--border)" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Avatar name={p.name} size={28} /><span style={{ fontWeight: 800, fontSize: 13 }}>{p.name}</span></div>
+                              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--navy)" }}>
+                                {pred ? `${pred.home_score}-${pred.away_score}` : <span style={{ color: "var(--muted)" }}>—</span>}
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                {pred?.first_scoring_team
+                                  ? <><Flag code={pred.first_scoring_team} size={18} /><span style={{ fontSize: 12, fontWeight: 700 }}>{pred.first_scoring_team.toUpperCase()}</span></>
+                                  : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>}
+                              </div>
+                              <div>
+                                {pred ? (
+                                  <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 20, background: pred.goes_to_extra_time ? "rgba(255,107,53,.1)" : "rgba(0,191,165,.1)", color: pred.goes_to_extra_time ? "var(--coral)" : "var(--teal)" }}>
+                                    {pred.goes_to_extra_time ? "YES" : "NO"}
+                                  </span>
+                                ) : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* QUICK AWARD REMINDER */}
+              <div style={{ padding: "14px 18px", background: "rgba(124,77,255,.06)", borderRadius: 14, border: "1.5px solid rgba(124,77,255,.2)", fontSize: 13, color: "var(--purple)", fontWeight: 700, marginTop: 8 }}>
+                💡 To award points: go to the <strong>🎁 Bonus tab</strong> → select the participant → enter the points and reason (e.g. "Glory Road: SF1 exact score"). This keeps the full audit trail in the points log.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -2789,6 +2902,353 @@ function Calendar({ matches }) {
   );
 }
 
+
+// ─── KNOCKOUT COMPONENT ──────────────────────────────────────────
+const KNOCKOUT_CSS = `
+.ko-hero{background:linear-gradient(135deg,var(--navy) 0%,#2d1b69 100%);border-radius:24px;padding:28px 32px;margin-bottom:28px;position:relative;overflow:hidden}
+.ko-hero::before{content:'🏆';position:absolute;right:-10px;top:-20px;font-size:120px;opacity:.06;transform:rotate(-15deg)}
+.ko-hero-title{font-family:var(--fd);font-size:28px;color:var(--yellow);letter-spacing:2px;margin-bottom:4px}
+.ko-hero-sub{color:rgba(255,255,255,.6);font-size:13px;font-weight:600}
+.ko-pts-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,214,0,.15);border:1px solid rgba(255,214,0,.3);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:800;color:var(--yellow);margin-top:10px}
+.ko-section{background:var(--card);border-radius:20px;border:2px solid var(--border);padding:24px;margin-bottom:20px;box-shadow:var(--sh)}
+.ko-section-title{font-family:var(--fd);font-size:16px;color:var(--navy);letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.ko-section-sub{color:var(--muted);font-size:12px;font-weight:600;margin-bottom:18px}
+.ko-vs{font-family:var(--fd);font-size:18px;color:var(--coral)}
+.ko-score-btn{width:36px;height:36px;border-radius:10px;border:2px solid var(--border);background:var(--bg);font-weight:900;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--navy)}
+.ko-score-btn:hover{border-color:var(--coral);background:rgba(255,107,53,.08)}
+.ko-score-display{font-family:var(--fd);font-size:32px;color:var(--navy);min-width:28px;text-align:center}
+.ko-score-sep{font-family:var(--fd);font-size:24px;color:var(--muted);margin:0 4px}
+.ko-toggle{display:flex;gap:8px;margin-bottom:16px}
+.ko-toggle-btn{flex:1;padding:10px;border-radius:12px;border:2px solid var(--border);background:var(--bg);font-weight:800;font-size:13px;cursor:pointer;transition:all .15s;color:var(--muted);text-align:center}
+.ko-toggle-btn.on{background:rgba(0,191,165,.12);border-color:var(--teal);color:var(--teal)}
+.ko-input{width:100%;padding:12px 16px;border-radius:12px;border:2px solid var(--border);background:var(--bg);color:var(--navy);font-family:var(--fb);font-size:14px;font-weight:600;outline:none;transition:border-color .15s;margin-bottom:16px}
+.ko-input:focus{border-color:var(--coral)}
+.ko-submit-btn{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--coral),#ff8c42);color:#fff;font-family:var(--fd);font-size:15px;letter-spacing:1px;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(255,107,53,.35)}
+.ko-submit-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,107,53,.45)}
+.ko-submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ko-locked{background:rgba(139,146,178,.08);border-radius:14px;padding:16px;text-align:center;color:var(--muted);font-weight:700;font-size:13px;margin-top:8px}
+.ko-result-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:var(--bg);margin-bottom:8px}
+.ko-result-label{font-size:13px;color:var(--muted);font-weight:700}
+.ko-result-value{font-size:13px;font-weight:800;color:var(--navy)}
+.ko-bracket-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.ko-finalist-pick{border-radius:14px;border:2px solid var(--border);background:var(--bg);padding:14px;cursor:pointer;transition:all .2s;text-align:center}
+.ko-finalist-pick:hover{border-color:var(--coral);transform:translateY(-2px)}
+.ko-finalist-pick.selected{border-color:var(--teal);background:rgba(0,191,165,.08)}
+.ko-finalist-name{font-weight:800;font-size:12px;margin-top:6px;color:var(--navy)}
+.ko-divider{height:1px;background:var(--border);margin:20px 0}
+.ko-empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.ko-empty-icon{font-size:48px;margin-bottom:12px}
+.ko-empty-title{font-family:var(--fd);font-size:18px;color:var(--navy);margin-bottom:6px}
+.ko-empty-sub{font-size:13px;font-weight:600}
+.ko-tab-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.ko-tab{padding:8px 18px;border-radius:10px;border:2px solid var(--border);background:var(--bg);font-weight:800;font-size:12px;cursor:pointer;transition:all .15s;color:var(--muted)}
+.ko-tab.on{background:var(--coral);color:#fff;border-color:var(--coral);box-shadow:0 3px 10px rgba(255,107,53,.3)}
+.ko-label{font-size:12px;color:var(--muted);font-weight:800;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;display:block}
+.ko-countdown{font-family:var(--fd);font-size:13px;color:var(--coral);margin-bottom:12px}
+.ko-match-header{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:20px;padding:16px;background:var(--bg);border-radius:14px}
+.ko-team-name{font-weight:800;font-size:13px;color:var(--navy);margin-top:6px;text-align:center}
+`;
+
+function KnockoutCountdown({ kickoff }) {
+  const [timeLeft, setTimeLeft] = React.useState("");
+  React.useEffect(() => {
+    const update = () => {
+      const diff = new Date(kickoff) - new Date();
+      if (diff <= 0) { setTimeLeft("LIVE / FINISHED"); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setTimeLeft(h > 0 ? `${h}h ${m}m to kickoff` : `${m}m to kickoff`);
+    };
+    update();
+    const t = setInterval(update, 60000);
+    return () => clearInterval(t);
+  }, [kickoff]);
+  return <div className="ko-countdown">⏱ {timeLeft}</div>;
+}
+
+function BracketPicker({ matches, userId, existing, showToast }) {
+  const sf1 = matches.find(m => m.id === "sf_01");
+  const sf2 = matches.find(m => m.id === "sf_02");
+  const teams = [];
+  [sf1, sf2].forEach(sf => {
+    if (sf) {
+      if (sf.home_id && sf.home_id !== "tbd") teams.push(sf.home_id);
+      if (sf.away_id && sf.away_id !== "tbd") teams.push(sf.away_id);
+    }
+  });
+  const qfTeams = [];
+  ["qf_01","qf_02","qf_03","qf_04"].forEach(id => {
+    const m = matches.find(x => x.id === id);
+    if (m) {
+      if (m.home_id && m.home_id !== "tbd") qfTeams.push(m.home_id);
+      if (m.away_id && m.away_id !== "tbd") qfTeams.push(m.away_id);
+    }
+  });
+  const pickable = teams.length >= 2 ? teams : [...new Set(qfTeams)];
+  const [f1, setF1] = React.useState(existing?.finalist_1 || null);
+  const [f2, setF2] = React.useState(existing?.finalist_2 || null);
+  const [saving, setSaving] = React.useState(false);
+  const locked = existing?.locked || false;
+
+  const handlePick = (team) => {
+    if (locked) return;
+    if (f1 === team) { setF1(null); return; }
+    if (f2 === team) { setF2(null); return; }
+    if (!f1) { setF1(team); return; }
+    if (!f2) { setF2(team); return; }
+    setF1(team); setF2(null);
+  };
+
+  const handleSave = async () => {
+    if (!f1 || !f2) { showToast("⚠️ Pick both finalists!"); return; }
+    setSaving(true);
+    await sbUpsert("special_predictions", {
+      id: userId + "_bracket",
+      user_id: userId,
+      match_id: "final_01",
+      prediction_type: "bracket",
+      finalist_1: f1,
+      finalist_2: f2,
+      locked: false,
+      created_at: new Date().toISOString(),
+    });
+    showToast("✅ Bracket saved!");
+    setSaving(false);
+  };
+
+  if (pickable.length === 0) return (
+    <div className="ko-empty">
+      <div className="ko-empty-icon">⏳</div>
+      <div className="ko-empty-title">Teams Not Confirmed Yet</div>
+      <div className="ko-empty-sub">Check back once Quarter Finals are done</div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="ko-section-sub">Pick the two teams you think will contest the Final. 100pts for both correct · 50pts for one.</div>
+      <div className="ko-bracket-grid">
+        {pickable.map(team => {
+          const sel = f1 === team || f2 === team;
+          return (
+            <div key={team} className={"ko-finalist-pick" + (sel ? " selected" : "")} onClick={() => handlePick(team)}>
+              <Flag code={team} size={40} />
+              <div className="ko-finalist-name">{team.toUpperCase()}</div>
+              {f1 === team && <div style={{ fontSize: 10, color: "var(--teal)", fontWeight: 800, marginTop: 4 }}>FINALIST 1 ✓</div>}
+              {f2 === team && <div style={{ fontSize: 10, color: "var(--teal)", fontWeight: 800, marginTop: 4 }}>FINALIST 2 ✓</div>}
+            </div>
+          );
+        })}
+      </div>
+      {f1 && f2 && (
+        <div style={{ background: "rgba(0,191,165,.08)", borderRadius: 12, padding: "10px 14px", marginBottom: 14, textAlign: "center" }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: "var(--teal)" }}>
+            Your Final: <Flag code={f1} size={20} style={{ marginRight: 4 }} /> {f1.toUpperCase()} vs <Flag code={f2} size={20} style={{ marginLeft: 4, marginRight: 4 }} /> {f2.toUpperCase()}
+          </span>
+        </div>
+      )}
+      {locked
+        ? <div className="ko-locked">🔒 Bracket locked — good luck!</div>
+        : <button className="ko-submit-btn" onClick={handleSave} disabled={saving || !f1 || !f2}>{saving ? "SAVING..." : "🔒 LOCK MY BRACKET"}</button>
+      }
+    </div>
+  );
+}
+
+function GoldenTicketCard({ match, userId, existing, showToast, label }) {
+  const homeId = match?.home_id || "tbd";
+  const awayId = match?.away_id || "tbd";
+  const home = homeId.toUpperCase();
+  const away = awayId.toUpperCase();
+  const isLocked = match?.status === "completed" || existing?.locked;
+  const kickoff = match?.kickoff;
+  const isBeforeKickoff = kickoff ? new Date() < new Date(kickoff) : true;
+  const [homeScore, setHomeScore] = React.useState(existing?.home_score ?? 1);
+  const [awayScore, setAwayScore] = React.useState(existing?.away_score ?? 1);
+  const [scorer, setScorer] = React.useState(existing?.first_scoring_team || null);
+  const [penalties, setPenalties] = React.useState(existing?.goes_to_extra_time ?? false);
+  const [saving, setSaving] = React.useState(false);
+
+  const handleSave = async () => {
+    if (!match?.id) return;
+    setSaving(true);
+    await sbUpsert("special_predictions", {
+      id: userId + "_" + match.id,
+      user_id: userId,
+      match_id: match.id,
+      prediction_type: "golden_ticket",
+      home_score: homeScore,
+      away_score: awayScore,
+      first_scoring_team: scorer,
+      goes_to_extra_time: penalties,
+      locked: false,
+      created_at: new Date().toISOString(),
+    });
+    showToast("✅ Golden Ticket saved!");
+    setSaving(false);
+  };
+
+  if (homeId === "tbd" || awayId === "tbd") return (
+    <div className="ko-empty" style={{ padding: "28px 20px" }}>
+      <div style={{ fontSize: 36, marginBottom: 8 }}>⏳</div>
+      <div style={{ fontWeight: 800, color: "var(--navy)", marginBottom: 4 }}>{label} — Teams TBD</div>
+      <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>Available once both teams are confirmed</div>
+    </div>
+  );
+
+  return (
+    <div>
+      {kickoff && isBeforeKickoff && <KnockoutCountdown kickoff={kickoff} />}
+      <div className="ko-match-header">
+        <div style={{ textAlign: "center" }}>
+          <Flag code={homeId} size={40} />
+          <div className="ko-team-name">{home}</div>
+        </div>
+        <div className="ko-vs">VS</div>
+        <div style={{ textAlign: "center" }}>
+          <Flag code={awayId} size={40} />
+          <div className="ko-team-name">{away}</div>
+        </div>
+      </div>
+      <span className="ko-label">Predict the Scoreline <span style={{ color: "var(--yellow)" }}>+30pts</span></span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <Flag code={homeId} size={24} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button className="ko-score-btn" onClick={() => !isLocked && setHomeScore(Math.max(0, homeScore - 1))} disabled={isLocked}>−</button>
+            <div className="ko-score-display">{homeScore}</div>
+            <button className="ko-score-btn" onClick={() => !isLocked && setHomeScore(Math.min(9, homeScore + 1))} disabled={isLocked}>+</button>
+          </div>
+        </div>
+        <div className="ko-score-sep">–</div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <Flag code={awayId} size={24} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button className="ko-score-btn" onClick={() => !isLocked && setAwayScore(Math.max(0, awayScore - 1))} disabled={isLocked}>−</button>
+            <div className="ko-score-display">{awayScore}</div>
+            <button className="ko-score-btn" onClick={() => !isLocked && setAwayScore(Math.min(9, awayScore + 1))} disabled={isLocked}>+</button>
+          </div>
+        </div>
+      </div>
+      <span className="ko-label">First Team to Score <span style={{ color: "var(--yellow)" }}>+20pts</span></span>
+      <div className="ko-toggle">
+        <button className={"ko-toggle-btn" + (scorer === homeId ? " on" : "")} onClick={() => !isLocked && setScorer(homeId)} disabled={isLocked}>
+          <Flag code={homeId} size={18} style={{ marginRight: 6 }} /> {home}
+        </button>
+        <button className={"ko-toggle-btn" + (scorer === awayId ? " on" : "")} onClick={() => !isLocked && setScorer(awayId)} disabled={isLocked}>
+          <Flag code={awayId} size={18} style={{ marginRight: 6 }} /> {away}
+        </button>
+      </div>
+      <span className="ko-label">Goes to Extra Time / Penalties? <span style={{ color: "var(--yellow)" }}>+20pts</span></span>
+      <div className="ko-toggle">
+        <button className={"ko-toggle-btn" + (!penalties ? " on" : "")} onClick={() => !isLocked && setPenalties(false)} disabled={isLocked}>⚽ No — Normal Time</button>
+        <button className={"ko-toggle-btn" + (penalties ? " on" : "")} onClick={() => !isLocked && setPenalties(true)} disabled={isLocked}>🥊 Yes — Extra Time / Pens</button>
+      </div>
+      {isLocked
+        ? <div className="ko-locked">🔒 Prediction locked — fingers crossed! Max 70pts available.</div>
+        : <button className="ko-submit-btn" onClick={handleSave} disabled={saving}>{saving ? "SAVING..." : "🎯 LOCK GOLDEN TICKET"}</button>
+      }
+      {existing && (
+        <div style={{ marginTop: 14 }}>
+          <div className="ko-divider" />
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 8 }}>YOUR SAVED PREDICTION</div>
+          <div className="ko-result-row"><span className="ko-result-label">Score</span><span className="ko-result-value">{home} {existing.home_score} – {existing.away_score} {away}</span></div>
+          <div className="ko-result-row">
+            <span className="ko-result-label">First Team to Score</span>
+            <span className="ko-result-value" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {existing.first_scoring_team
+                ? <><Flag code={existing.first_scoring_team} size={18} /> {getTeamName ? getTeamName(existing.first_scoring_team) : existing.first_scoring_team.toUpperCase()}</>
+                : "—"}
+            </span>
+          </div>
+          <div className="ko-result-row"><span className="ko-result-label">Extra Time / Pens</span><span className="ko-result-value">{existing.goes_to_extra_time ? "Yes" : "No"}</span></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Knockout({ user, matches, participants, showToast }) {
+  const userId = user?.toLowerCase();
+  const [activeTab, setActiveTab] = React.useState("bracket");
+  const [specialPreds, setSpecialPreds] = React.useState([]);
+  const [koLoading, setKoLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const load = async () => {
+      if (!userId) return;
+      const data = await sbGet("special_predictions", "user_id=eq." + userId);
+      setSpecialPreds(data || []);
+      setKoLoading(false);
+    };
+    load();
+  }, [userId]);
+
+  const getPred = (matchId) => specialPreds.find(p => p.match_id === matchId && p.prediction_type === "golden_ticket");
+  const getBracketPred = () => specialPreds.find(p => p.prediction_type === "bracket");
+
+  const sf1 = matches.find(m => m.id === "sf_01");
+  const sf2 = matches.find(m => m.id === "sf_02");
+  const final = matches.find(m => m.id === "final_01");
+
+  const tabs = [
+    { id: "bracket", label: "🎯 Final Bracket" },
+    { id: "sf1",     label: "⚽ Semi Final 1"  },
+    { id: "sf2",     label: "⚽ Semi Final 2"  },
+    { id: "final",   label: "🏆 The Final"      },
+  ];
+
+  return (
+    <div>
+      <style>{KNOCKOUT_CSS}</style>
+      <div className="phead">
+        <div className="ptitle">⭐ Glory Road</div>
+        <div className="psub">Semi Finals · Final · Special Predictions — up to 440 bonus points</div>
+      </div>
+      <div className="ko-hero">
+        <div className="ko-hero-title">THE BUSINESS END</div>
+        <div className="ko-hero-sub">Every prediction counts more from here. Pick your finalists, nail the scoreline, call which team scores first.</div>
+        <div className="ko-pts-pill">⭐ Up to 440 bonus points available</div>
+      </div>
+      <div className="ko-tab-row">
+        {tabs.map(t => (
+          <div key={t.id} className={"ko-tab" + (activeTab === t.id ? " on" : "")} onClick={() => setActiveTab(t.id)}>{t.label}</div>
+        ))}
+      </div>
+
+      {activeTab === "bracket" && (
+        <div className="ko-section">
+          <div className="ko-section-title">🎯 Perfect Final Bracket</div>
+          <BracketPicker matches={matches} userId={userId} existing={getBracketPred()} showToast={showToast} />
+        </div>
+      )}
+      {activeTab === "sf1" && (
+        <div className="ko-section">
+          <div className="ko-section-title">⚽ Semi Final 1 — Golden Ticket</div>
+          <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, marginBottom: 14 }}>Max 70pts · Score +30 · First Team to Score +20 · Pens/ET +20</div>
+          {koLoading ? <div style={{ color: "var(--muted)", textAlign: "center", padding: 20 }}>Loading...</div>
+            : <GoldenTicketCard match={sf1} userId={userId} existing={getPred("sf_01")} showToast={showToast} label="Semi Final 1" />}
+        </div>
+      )}
+      {activeTab === "sf2" && (
+        <div className="ko-section">
+          <div className="ko-section-title">⚽ Semi Final 2 — Golden Ticket</div>
+          <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, marginBottom: 14 }}>Max 70pts · Score +30 · First Team to Score +20 · Pens/ET +20</div>
+          {koLoading ? <div style={{ color: "var(--muted)", textAlign: "center", padding: 20 }}>Loading...</div>
+            : <GoldenTicketCard match={sf2} userId={userId} existing={getPred("sf_02")} showToast={showToast} label="Semi Final 2" />}
+        </div>
+      )}
+      {activeTab === "final" && (
+        <div className="ko-section">
+          <div className="ko-section-title">🏆 The Final — Golden Ticket</div>
+          <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, marginBottom: 14 }}>Max 70pts · Score +30 · First Team to Score +20 · Pens/ET +20</div>
+          {koLoading ? <div style={{ color: "var(--muted)", textAlign: "center", padding: 20 }}>Loading...</div>
+            : <GoldenTicketCard match={final} userId={userId} existing={getPred("final_01")} showToast={showToast} label="The Final" />}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── APP ROOT ────────────────────────────────────────────────────
 export default function App() {
@@ -3121,6 +3581,7 @@ export default function App() {
     { id: "challenge",   icon: "🎮", label: "Challenge", badge: true },
     { id: "calendar",    icon: "📅", label: "Calendar"   },
     { id: "bracket",     icon: "🏆", label: "Bracket"    },
+    { id: "gloryroad",   icon: "⭐", label: "Glory Road" },
     ...(isAdmin ? [{ id: "admin", icon: "⚙️", label: "Admin" }] : []),
   ];
 
@@ -3202,6 +3663,7 @@ export default function App() {
       case "challenge":   return <Challenge   user={currentUser} participants={participants} showToast={showToast} onAddChallengePoints={handleAddChallengePoints} />;
       case "calendar":    return <Calendar    matches={matches} />;
       case "bracket":     return <Bracket     matches={matches} />;
+      case "gloryroad":    return <Knockout    user={currentUser} matches={matches} participants={participants} showToast={showToast} />;
       case "admin":       return <AdminPanel  user={currentUser} participants={participants} matches={matches} showToast={showToast} onRecordResult={handleRecordResult} onAwardBonus={handleAwardBonus} onAdvanceTeam={handleAdvanceTeam} />;
       default:            return <Dashboard   user={currentUser} participants={participants} matches={matches} setPage={setPage} showToast={showToast} />;
     }
