@@ -229,6 +229,13 @@ const TRIVIA_BANK = {
     { q: "Which was the first African team to reach a World Cup semi-final?", opts: ["Nigeria", "Senegal", "Morocco", "Cameroon"], ans: 2 },
     { q: "What year did VAR first appear at a World Cup?", opts: ["2014", "2018", "2022", "2026"], ans: 1 },
   ],
+  6: [
+    { q: "How many teams reach the Semi Finals of the World Cup?", opts: ["2", "4", "6", "8"], ans: 1 },
+    { q: "Which nation has appeared in the most World Cup finals?", opts: ["Germany", "Brazil", "Italy", "Argentina"], ans: 0 },
+    { q: "What is the maximum number of goals scored in a single World Cup match?", opts: ["8", "10", "12", "9"], ans: 1 },
+    { q: "Which country won the very first FIFA World Cup in 1930?", opts: ["Argentina", "Brazil", "Uruguay", "Italy"], ans: 2 },
+    { q: "How many referees are involved in a World Cup match including VAR?", opts: ["3", "4", "5", "6"], ans: 3 },
+  ],
 };
 
 const LIGHTNING_BANK = {
@@ -268,6 +275,18 @@ const LIGHTNING_BANK = {
     { s: "The 2026 World Cup is the biggest ever with 48 teams", ans: true },
     { s: "Morocco reached the semi-finals of the 2022 World Cup", ans: true },
   ],
+  6: [
+    { s: "The World Cup Final has never ended 0-0 in normal time", ans: false },
+    { s: "A player can be sent off in the World Cup Final", ans: true },
+    { s: "The winner of the World Cup gets to keep the original trophy", ans: false },
+    { s: "Extra time in a World Cup knockout match is two 15-minute halves", ans: true },
+    { s: "The 2026 World Cup Final kicks off in MetLife Stadium, New Jersey", ans: true },
+    { s: "Brazil have appeared in more World Cup Finals than any other nation", ans: false },
+    { s: "A goalkeeper can score in a penalty shootout", ans: true },
+    { s: "The third place play-off is played before the Final", ans: true },
+    { s: "No team has ever won three consecutive World Cups", ans: true },
+    { s: "The World Cup trophy weighs approximately 6kg", ans: true },
+  ],
 };
 
 const MEMORY_BANK = {
@@ -276,6 +295,7 @@ const MEMORY_BANK = {
   3: ["jpn","mor","cro","den","swi","sen"],
   4: ["aus","pol","kor","gha","nor","tur"],
   5: ["rsa","cze","col","irq","swe","ecu"],
+  6: ["fra","eng","spa","nor","arg","bel"],
 };
 
 const FLAG_QUIZ_BANK = {
@@ -303,6 +323,11 @@ const FLAG_QUIZ_BANK = {
     { id:"bih", name:"Bosnia" }, { id:"col", name:"Colombia" },
     { id:"cpv", name:"Cape Verde" }, { id:"cze", name:"Czechia" },
     { id:"sco", name:"Scotland" },
+  ],
+  6: [
+    { id:"fra", name:"France" }, { id:"mor", name:"Morocco" },
+    { id:"spa", name:"Spain" }, { id:"bel", name:"Belgium" },
+    { id:"arg", name:"Argentina" },
   ],
 };
 
@@ -376,6 +401,18 @@ const HOT_OR_NOT_BANK = {
     { s: "The 2026 World Cup will break all viewing records", hot: true  },
     { s: "Our office competition winner deserves a trophy",  hot: true  },
   ],
+  6: [
+    { s: "The Semi Finals are the best matches of any World Cup",       hot: true  },
+    { s: "A penalty shootout Final would be more exciting than AET",    hot: true  },
+    { s: "The team that scores first in the Final will win",            hot: true  },
+    { s: "There will be a surprise winner of the 2026 World Cup",       hot: false },
+    { s: "This office competition has been more exciting than expected", hot: true  },
+    { s: "The Golden Boot winner will come from the winning team",      hot: false },
+    { s: "Extra time in the Final is more nerve-wracking than pens",    hot: false },
+    { s: "The best player at this World Cup deserves the Golden Ball",  hot: true  },
+    { s: "Winning the World Cup is the greatest achievement in sport",  hot: true  },
+    { s: "The office competition winner should get a real prize",       hot: true  },
+  ],
 };
 
 const WEEK_SCHEDULE = {
@@ -384,6 +421,7 @@ const WEEK_SCHEDULE = {
   3: ["trivia", "flags", "hot", "memory"],
   4: ["trivia", "flags", "hot", "memory"],
   5: ["trivia", "flags", "hot", "memory"],
+  6: ["trivia", "flags", "hot", "memory"],
 };
 
 const CHALLENGE_INFO = {
@@ -397,7 +435,7 @@ function getCurrentWeek() {
   const start = new Date("2026-06-11T00:00:00+02:00");
   const now   = new Date();
   const diff  = Math.floor((now - start) / (7 * 24 * 60 * 60 * 1000));
-  return Math.min(Math.max(diff + 1, 1), 5);
+  return Math.min(Math.max(diff + 1, 1), 6);
 }
 
 // ─── STYLES ──────────────────────────────────────────────────────
@@ -1425,7 +1463,8 @@ function getWeekLabel(week) {
     2: "Week 2 · Jun 18–24",
     3: "Week 3 · Jun 25–27",
     4: "Week 4 · R32",
-    5: "Week 5 · Knockouts",
+    5: "Week 5 · QF",
+    6: "Week 6 · SF & Final",
   };
   return labels[week] || "Week " + week;
 }
@@ -2151,6 +2190,7 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
     3: { home: "bra", homeName: "Brazil",      away: "sco", awayName: "Scotland"     },
     4: { home: "eng", homeName: "England",     away: "pan", awayName: "Panama"       },
     5: { home: "arg", homeName: "Argentina",   away: "jor", awayName: "Jordan"       },
+    6: { home: "fra", homeName: "France",      away: "eng", awayName: "England"      },
   };
   const scoreMatch = SCORE_MATCHES[week] || SCORE_MATCHES[1];
 
