@@ -938,7 +938,7 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
   // Prize leaderboard data
   const STAGE_ORDER   = ["Group Stage","Round of 32","Round of 16","Quarter Final","Semi Final","Third Place","Final","Champion"];
   const getUnderdogStage = p => { const d = (p.portfolio||[]).find(pt=>pt.slot==="underdog"); return d && d.stage ? STAGE_ORDER.indexOf(d.stage) : 0; };
-  const predChalPts   = p => (p.predPts||0) + (p.challengePts||0);
+  const predChalPts   = p => (p.predPts||0) + (p.challengePts||0) + (p.gloryRoadPts||0);
   const overallSorted   = [...(participants||[])].sort((a,b)=>(b.teamPts+b.predPts+b.challengePts+b.bonusPts+(b.gloryRoadPts||0))-(a.teamPts+a.predPts+a.challengePts+a.bonusPts+(a.gloryRoadPts||0)));
   const underdogSorted  = [...(participants||[])].filter(p=>(p.portfolio||[]).find(pt=>pt.slot==="underdog")).sort((a,b)=>getUnderdogStage(b)-getUnderdogStage(a));
   const predictorSorted = [...(participants||[])].sort((a,b)=>predChalPts(b)-predChalPts(a));
