@@ -2300,8 +2300,8 @@ function Challenge({ user, participants, showToast, onAddChallengePoints }) {
 // ─── GLORY ROAD SCORING PANELS ───────────────────────────────────
 
 function GloryRoadScoringPanel({ matchId, label, match, matchPreds, participants, isTbd, showToast, onAwarded }) {
-  const homeId = match?.home_id || "tbd";
-  const awayId = match?.away_id || "tbd";
+  const homeId = match?.home || "tbd";
+  const awayId = match?.away || "tbd";
   const [actualHome,    setActualHome]    = useState("");
   const [actualAway,    setActualAway]    = useState("");
   const [firstTeam,     setFirstTeam]     = useState("");
@@ -3002,8 +3002,8 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
                 const label = matchId === "sf_01" ? "Semi Final 1" : matchId === "sf_02" ? "Semi Final 2" : "The Final";
                 const match = matches.find(m => m.id === matchId);
                 const matchPreds = grPreds.filter(x => x.match_id === matchId && x.prediction_type === "golden_ticket");
-                const homeId = match?.home_id || "tbd";
-                const awayId = match?.away_id || "tbd";
+                const homeId = match?.home || "tbd";
+                const awayId = match?.away || "tbd";
                 const isTbd = homeId === "tbd" || awayId === "tbd";
 
                 return (
@@ -3065,7 +3065,7 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
                   <div key={matchId} style={{ marginBottom: 20 }}>
                     <div style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--navy)", marginBottom: 8 }}>
                       ⚽ {label.toUpperCase()}
-                      {match?.home_id !== "tbd" && <span style={{ fontSize: 12, fontFamily: "var(--fb)", color: "var(--muted)", marginLeft: 8, fontWeight: 700 }}>{match.home_id?.toUpperCase()} vs {match.away_id?.toUpperCase()}</span>}
+                      {match?.home !== "tbd" && <span style={{ fontSize: 12, fontFamily: "var(--fb)", color: "var(--muted)", marginLeft: 8, fontWeight: 700 }}>{match.home?.toUpperCase()} vs {match.away?.toUpperCase()}</span>}
                     </div>
                     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", background: "var(--navy)", padding: "10px 16px", gap: 8 }}>
@@ -3324,16 +3324,16 @@ function BracketPicker({ matches, userId, existing, showToast }) {
   const teams = [];
   [sf1, sf2].forEach(sf => {
     if (sf) {
-      if (sf.home_id && sf.home_id !== "tbd") teams.push(sf.home_id);
-      if (sf.away_id && sf.away_id !== "tbd") teams.push(sf.away_id);
+      if (sf.home && sf.home !== "tbd") teams.push(sf.home);
+      if (sf.away && sf.away !== "tbd") teams.push(sf.away);
     }
   });
   const qfTeams = [];
   ["qf_01","qf_02","qf_03","qf_04"].forEach(id => {
     const m = matches.find(x => x.id === id);
     if (m) {
-      if (m.home_id && m.home_id !== "tbd") qfTeams.push(m.home_id);
-      if (m.away_id && m.away_id !== "tbd") qfTeams.push(m.away_id);
+      if (m.home && m.home !== "tbd") qfTeams.push(m.home);
+      if (m.away && m.away !== "tbd") qfTeams.push(m.away);
     }
   });
   const pickable = teams.length >= 2 ? teams : [...new Set(qfTeams)];
@@ -3408,8 +3408,8 @@ function BracketPicker({ matches, userId, existing, showToast }) {
 }
 
 function GoldenTicketCard({ match, userId, existing, showToast, label }) {
-  const homeId = match?.home_id || "tbd";
-  const awayId = match?.away_id || "tbd";
+  const homeId = match?.home || "tbd";
+  const awayId = match?.away || "tbd";
   const home = homeId.toUpperCase();
   const away = awayId.toUpperCase();
   const isLocked = match?.status === "completed" || existing?.locked;
