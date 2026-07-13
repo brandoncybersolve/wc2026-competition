@@ -3509,7 +3509,7 @@ function GoldenTicketCard({ match, userId, existing, showToast, label }) {
             <span className="ko-result-label">First Team to Score</span>
             <span className="ko-result-value" style={{ display: "flex", alignItems: "center", gap: 6 }}>
               {existing.first_scoring_team
-                ? <><Flag code={existing.first_scoring_team} size={18} /> {getTeamName ? getTeamName(existing.first_scoring_team) : existing.first_scoring_team.toUpperCase()}</>
+                ? <><Flag code={existing.first_scoring_team} size={18} /> {existing.first_scoring_team.toUpperCase()}</>
                 : "—"}
             </span>
           </div>
