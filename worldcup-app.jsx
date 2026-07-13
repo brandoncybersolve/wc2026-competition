@@ -2324,7 +2324,7 @@ function GloryRoadScoringPanel({ matchId, label, match, matchPreds, participants
 
 
   const calcPoints = () => {
-    if (actualHome === "" || actualAway === "") { showToast("⚠️ Enter the actual score first"); return; }
+    if (actualHome === "" || actualAway === "") { showToast({ title: "⚠️ Enter the actual score first" }); return; }
     const h = parseInt(actualHome);
     const a = parseInt(actualAway);
     const results = participants.map(p => {
@@ -2356,7 +2356,7 @@ function GloryRoadScoringPanel({ matchId, label, match, matchPreds, participants
     }
     setAwarded(true);
     setAwarding(false);
-    showToast("✅ Glory Road points awarded for " + label + "!");
+    showToast({ title: "✅ Glory Road points awarded for " + label + "!" });
     if (onAwarded) onAwarded();
   };
 
@@ -2489,7 +2489,7 @@ function GloryRoadBracketPanel({ grPreds, participants, showToast }) {
   }, []);
 
   const calcPoints = () => {
-    if (!finalist1 || !finalist2) { showToast("⚠️ Enter both finalists first"); return; }
+    if (!finalist1 || !finalist2) { showToast({ title: "⚠️ Enter both finalists first" }); return; }
     const results = participants.map(p => {
       const pred = grPreds.find(x => x.user_id === p.name?.toLowerCase() && x.prediction_type === "bracket");
       if (!pred) return { name: p.name, userId: p.name?.toLowerCase(), pts: 0, noPred: true };
@@ -2518,7 +2518,7 @@ function GloryRoadBracketPanel({ grPreds, participants, showToast }) {
     }
     setAwarded(true);
     setAwarding(false);
-    showToast("✅ Bracket points awarded!");
+    showToast({ title: "✅ Bracket points awarded!" });
   };
 
   return (
@@ -3352,7 +3352,7 @@ function BracketPicker({ matches, userId, existing, showToast }) {
   };
 
   const handleSave = async () => {
-    if (!f1 || !f2) { showToast("⚠️ Pick both finalists!"); return; }
+    if (!f1 || !f2) { showToast({ title: "⚠️ Pick both finalists!" }); return; }
     setSaving(true);
     await sbUpsert("special_predictions", {
       id: userId + "_bracket",
@@ -3364,7 +3364,7 @@ function BracketPicker({ matches, userId, existing, showToast }) {
       locked: true,
       created_at: new Date().toISOString(),
     });
-    showToast("✅ Bracket saved!");
+    showToast({ title: "✅ Bracket saved!" });
     setSaving(false);
   };
 
@@ -3436,7 +3436,7 @@ function GoldenTicketCard({ match, userId, existing, showToast, label }) {
       locked: true,
       created_at: new Date().toISOString(),
     });
-    showToast("✅ Golden Ticket saved!");
+    showToast({ title: "✅ Golden Ticket saved!" });
     setSaving(false);
   };
 
