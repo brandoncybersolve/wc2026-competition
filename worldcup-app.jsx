@@ -3361,7 +3361,7 @@ function BracketPicker({ matches, userId, existing, showToast }) {
       prediction_type: "bracket",
       finalist_1: f1,
       finalist_2: f2,
-      locked: false,
+      locked: true,
       created_at: new Date().toISOString(),
     });
     showToast("✅ Bracket saved!");
@@ -3433,7 +3433,7 @@ function GoldenTicketCard({ match, userId, existing, showToast, label }) {
       away_score: awayScore,
       first_scoring_team: scorer,
       goes_to_extra_time: penalties,
-      locked: false,
+      locked: true,
       created_at: new Date().toISOString(),
     });
     showToast("✅ Golden Ticket saved!");
