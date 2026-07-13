@@ -2328,13 +2328,13 @@ function GloryRoadScoringPanel({ matchId, label, match, matchPreds, participants
     const h = parseInt(actualHome);
     const a = parseInt(actualAway);
     const results = participants.map(p => {
-      const pred = matchPreds.find(x => x.user_id === p.id?.toLowerCase());
-      if (!pred) return { name: p.name, userId: p.id?.toLowerCase(), pts: 0, scoreCorrect: false, teamCorrect: false, pensCorrect: false, noPred: true };
+      const pred = matchPreds.find(x => x.user_id === p.name?.toLowerCase());
+      if (!pred) return { name: p.name, userId: p.name?.toLowerCase(), pts: 0, scoreCorrect: false, teamCorrect: false, pensCorrect: false, noPred: true };
       const scoreCorrect = pred.home_score === h && pred.away_score === a;
       const teamCorrect  = firstTeam && pred.first_scoring_team === firstTeam;
       const pensCorrect  = pred.goes_to_extra_time === wentToPens;
       const pts = (scoreCorrect ? 30 : 0) + (teamCorrect ? 20 : 0) + (pensCorrect ? 20 : 0);
-      return { name: p.name, userId: p.id?.toLowerCase(), pts, scoreCorrect, teamCorrect, pensCorrect, noPred: false };
+      return { name: p.name, userId: p.name?.toLowerCase(), pts, scoreCorrect, teamCorrect, pensCorrect, noPred: false };
     });
     setPreview(results);
   };
@@ -2344,7 +2344,7 @@ function GloryRoadScoringPanel({ matchId, label, match, matchPreds, participants
     setAwarding(true);
     for (const r of preview) {
       if (r.noPred || r.pts === 0) continue;
-      const current = participants.find(p => p.id?.toLowerCase() === r.userId);
+      const current = participants.find(p => p.name?.toLowerCase() === r.userId);
       const currentGlory = current?.gloryRoadPts || 0;
       await sbUpdate("participants", "id=eq." + r.userId, { glory_road_pts: currentGlory + r.pts });
       await sbInsert("points_log", {
@@ -2491,12 +2491,12 @@ function GloryRoadBracketPanel({ grPreds, participants, showToast }) {
   const calcPoints = () => {
     if (!finalist1 || !finalist2) { showToast("⚠️ Enter both finalists first"); return; }
     const results = participants.map(p => {
-      const pred = grPreds.find(x => x.user_id === p.id?.toLowerCase() && x.prediction_type === "bracket");
-      if (!pred) return { name: p.name, userId: p.id?.toLowerCase(), pts: 0, noPred: true };
+      const pred = grPreds.find(x => x.user_id === p.name?.toLowerCase() && x.prediction_type === "bracket");
+      if (!pred) return { name: p.name, userId: p.name?.toLowerCase(), pts: 0, noPred: true };
       const got1 = pred.finalist_1 === finalist1 || pred.finalist_1 === finalist2;
       const got2 = pred.finalist_2 === finalist1 || pred.finalist_2 === finalist2;
       const pts  = (got1 && got2) ? 100 : (got1 || got2) ? 50 : 0;
-      return { name: p.name, userId: p.id?.toLowerCase(), pts, bothCorrect: got1 && got2, oneCorrect: (got1 || got2) && !(got1 && got2), noPred: false, pick1: pred.finalist_1, pick2: pred.finalist_2 };
+      return { name: p.name, userId: p.name?.toLowerCase(), pts, bothCorrect: got1 && got2, oneCorrect: (got1 || got2) && !(got1 && got2), noPred: false, pick1: pred.finalist_1, pick2: pred.finalist_2 };
     });
     setPreview(results);
   };
@@ -2506,7 +2506,7 @@ function GloryRoadBracketPanel({ grPreds, participants, showToast }) {
     setAwarding(true);
     for (const r of preview) {
       if (r.noPred || r.pts === 0) continue;
-      const current = participants.find(p => p.id?.toLowerCase() === r.userId);
+      const current = participants.find(p => p.name?.toLowerCase() === r.userId);
       const currentGlory = current?.gloryRoadPts || 0;
       await sbUpdate("participants", "id=eq." + r.userId, { glory_road_pts: currentGlory + r.pts });
       await sbInsert("points_log", {
@@ -3040,7 +3040,7 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
                   ))}
                 </div>
                 {participants.map(p => {
-                  const pred = grPreds.find(x => x.user_id === p.id?.toLowerCase() && x.prediction_type === "bracket");
+                  const pred = grPreds.find(x => x.user_id === p.name?.toLowerCase() && x.prediction_type === "bracket");
                   return (
                     <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", padding: "12px 16px", gap: 8, alignItems: "center", borderTop: "1px solid var(--border)" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Avatar name={p.name} size={28} /><span style={{ fontWeight: 800, fontSize: 13 }}>{p.name}</span></div>
@@ -3074,7 +3074,7 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
                         ))}
                       </div>
                       {participants.map(p => {
-                        const pred = matchPreds.find(x => x.user_id === p.id?.toLowerCase());
+                        const pred = matchPreds.find(x => x.user_id === p.name?.toLowerCase());
                         return (
                           <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "12px 16px", gap: 8, alignItems: "center", borderTop: "1px solid var(--border)" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Avatar name={p.name} size={28} /><span style={{ fontWeight: 800, fontSize: 13 }}>{p.name}</span></div>
