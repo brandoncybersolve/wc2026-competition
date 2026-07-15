@@ -1030,7 +1030,7 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
 
         {/* Col 3 — Top Predictor */}
         <PrizeLB
-          title="POINTS" icon="🎯" prize="R1000 · predictions + challenges"
+          title="POINTS" icon="🎯" prize="R1000 · predictions + challenges + glory road"
           data={predictorSorted} getValue={predChalPts}
           color="var(--teal)"
         />
