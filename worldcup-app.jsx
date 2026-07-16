@@ -932,7 +932,7 @@ function Dashboard({ user, participants, matches, setPage, showToast }) {
   const sorted   = [...(participants || [])].sort((a,b) => (b.teamPts+b.predPts+b.challengePts+b.bonusPts+(b.gloryRoadPts||0))-(a.teamPts+a.predPts+a.challengePts+a.bonusPts+(a.gloryRoadPts||0)));
   const myRank   = sorted.findIndex(p => p.name === user) + 1;
   const leader   = sorted[0] || me;
-  const gap      = (leader.teamPts+leader.predPts+leader.challengePts+leader.bonusPts) - myTotal;
+  const gap      = (leader.teamPts+leader.predPts+leader.challengePts+leader.bonusPts+(leader.gloryRoadPts||0)) - myTotal;
   const openMatches = (matches || []).filter(m => m.status === "open").length;
 
   // Prize leaderboard data
@@ -3110,7 +3110,8 @@ function Calendar({ matches }) {
     { num:2, label:"Week 2", dates:"Jun 18–24", stage:"Group Stage" },
     { num:3, label:"Week 3", dates:"Jun 25–27", stage:"Group Stage" },
     { num:4, label:"Week 4", dates:"Jun 28–Jul 3", stage:"Round of 32" },
-    { num:5, label:"Week 5", dates:"Jul 4–19",  stage:"Knockouts"   },
+    { num:5, label:"Week 5", dates:"Jul 4–11",  stage:"Quarter Finals" },
+    { num:6, label:"Week 6", dates:"Jul 12–19", stage:"SF & Final" },
   ];
 
   const WEEK_RANGES = {
@@ -3118,7 +3119,8 @@ function Calendar({ matches }) {
     2: { start:"2026-06-18", end:"2026-06-24" },
     3: { start:"2026-06-25", end:"2026-06-27" },
     4: { start:"2026-06-28", end:"2026-07-03" },
-    5: { start:"2026-07-04", end:"2026-07-19" },
+    5: { start:"2026-07-04", end:"2026-07-11" },
+    6: { start:"2026-07-12", end:"2026-07-19" },
   };
 
   const stageColor = (stage) => {
