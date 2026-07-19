@@ -178,7 +178,7 @@ const getTeam = id => TEAMS.find(t => t.id === id) || { id: id || "tbd", name: (
 const CONTENDERS = TEAMS.filter(t => !ELITE_IDS.includes(t.id) && t.rank >= 6 && t.rank <= 15);
 const UNDERDOGS  = TEAMS.filter(t => t.rank >= 16 && t.rank <= 51);
 const SLOT_MULT  = { favourite: 3, contender: 2, underdog: 5 };
-const STAGE_PTS  = { "Group Stage": 10, "Round of 32": 15, "Round of 16": 25, "Quarter Final": 40, "Semi Final": 60, "Third Place": 90, "Final": 120 };
+const STAGE_PTS  = { "Group Stage": 10, "Round of 32": 15, "Round of 16": 25, "Quarter Final": 40, "Semi Final": 60, "Third Place": 90, "Second Place": 100, "Final": 120 };
 const PEOPLE     = ["Brandon", "Cherine", "Anneli", "Jordan", "Ruann"];
 
 function buildRandomEliteAssign() {
@@ -2823,7 +2823,7 @@ function AdminPanel({ user, participants, matches, showToast, onRecordResult, on
             <label>New Stage</label>
             <select value={af.stage} onChange={e => setAf(f => ({ ...f, stage: e.target.value }))}>
               <option value="">-- Select stage --</option>
-              {["Round of 32", "Round of 16", "Quarter Final", "Semi Final", "Third Place", "Final", "Champion", "Eliminated"].map(s => (
+              {["Round of 32", "Round of 16", "Quarter Final", "Semi Final", "Third Place", "Second Place", "Final", "Champion", "Eliminated"].map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
