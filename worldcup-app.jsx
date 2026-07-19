@@ -178,7 +178,7 @@ const getTeam = id => TEAMS.find(t => t.id === id) || { id: id || "tbd", name: (
 const CONTENDERS = TEAMS.filter(t => !ELITE_IDS.includes(t.id) && t.rank >= 6 && t.rank <= 15);
 const UNDERDOGS  = TEAMS.filter(t => t.rank >= 16 && t.rank <= 51);
 const SLOT_MULT  = { favourite: 3, contender: 2, underdog: 5 };
-const STAGE_PTS  = { "Group Stage": 10, "Round of 32": 15, "Round of 16": 25, "Quarter Final": 40, "Semi Final": 60, "Third Place": 90, "Second Place": 100, "Final": 120 };
+const STAGE_PTS  = { "Group Stage": 10, "Round of 32": 15, "Round of 16": 25, "Quarter Final": 40, "Semi Final": 60, "Third Place": 90, "Second Place": 110, "Final": 150 };
 const PEOPLE     = ["Brandon", "Cherine", "Anneli", "Jordan", "Ruann"];
 
 function buildRandomEliteAssign() {
@@ -617,7 +617,7 @@ function HowToPlay({ onDone }) {
     { icon: "🐶", title: "1 Underdog (5×)", desc: "Pick any team ranked 16+. Highest multiplier — if they go on a run you could top the leaderboard!" },
     { icon: "🎯", title: "Predictions", desc: "Predict Home Win / Draw / Away Win for each match. Correct = 20 pts. Predictions lock at kick-off." },
     { icon: "🎮", title: "Weekly Challenges", desc: "4 challenges per week — Trivia, Flag Frenzy, Hot or Not and Memory Match. 15 pts each = 60 pts per week. Once done, locked." },
-    { icon: "🏆", title: "Points & Stages", desc: "Group Stage = 10pts, R32 = 15pts, R16 = 25pts, QF = 40pts, SF = 60pts, 3rd Place = 90pts, Final = 120pts. All × your multiplier." },
+    { icon: "🏆", title: "Points & Stages", desc: "Group Stage = 10pts, R32 = 15pts, R16 = 25pts, QF = 40pts, SF = 60pts, 3rd Place = 90pts, 2nd Place = 110pts, Final = 150pts. All × your multiplier." },
   ];
   return (
     <div className="ob-wrap">
